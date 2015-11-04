@@ -1,10 +1,11 @@
 from random import choice, uniform
-
+from math import exp
 
 class EndMove(object):
-    def __init__(self, space):
+    def __init__(self, space, beta):
         self.space = space
         self.movetype = "EndMove"
+        self.beta = beta
     def move(self, polyid, polytyp, endtyp):
         """
         The end move
@@ -32,9 +33,19 @@ class EndMove(object):
         x, y = newpoint
         if self.space.space[x][y] != 0: # site occupied, not possible to move
             return
+
+        xold, yold = poly.locs[endloc] 
         
-        if uniform(0,1) < self.weight(poly, endloc, poly.locs[endloc], newpoint, 1): # 
-            xold, yold = poly.locs[endloc]
+        nbr_bond_inc = 0
+        
+        if abs(self.space.space[xold][yold]) != 1: # (xold, yold) is in a bond
+            nbr_bond_inc -= 1 # will lose a bond
+            
+        bond_choice = [bpoint for bpoint in self.space.neighbor(newpoint) if self.space.can_build_bond(newpoint, bpoint)]
+        if bond_choice: # (x, y) can build a bond
+            nbr_bond_inc += 1 # will create a bond
+        
+        if uniform(0,1) < self.weight(nbr_bond_inc, self.beta): # 
             # removes the monomer on (xold, yold)
             # handles everything except in its polymer.locs and rspace
             self.space.safe_remove(xold, yold) 
@@ -53,14 +64,14 @@ class EndMove(object):
             self.space.rspace[xold][yold][0], self.space.rspace[xold][yold][1] = 0, 0
             
             # try building new bonds
-            bond_choice = [bpoint for bpoint in self.space.neighbor(newpoint) if self.space.can_build_bond(newpoint, bpoint)]
+            
             if bond_choice:
                 (xb, yb) = choice(bond_choice)
                 self.space.create_bond((x, y), (xb, yb))
             
             
-    def weight(self, polymer, endid, frompoint, topoint, beta):
+    def weight(self, nbr_bond_inc, beta):
         """
         The weight function for endmove
         """
-        return 2
+        return exp(nbr_bond_inc*beta)

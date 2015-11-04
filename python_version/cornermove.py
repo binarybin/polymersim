@@ -1,10 +1,11 @@
 from random import choice, uniform
-
+from math import exp
 
 class CornerMove(object):
-    def __init__(self, space):
+    def __init__(self, space, beta):
         self.space = space
         self.movetype = "CornerMove"
+        self.beta = beta
     def move(self, polyid, polytyp):
         """
         The corner move
@@ -38,7 +39,15 @@ class CornerMove(object):
         
         (pointid, (xnew, ynew)) = choice(possible_moves)
         xold, yold = poly.locs[pointid]
-        if uniform(0,1) < self.weight(poly, pointid, (xold, yold), (xnew, ynew), 1): # 
+        nbr_bond_inc = 0
+        if abs(self.space.space[xold][yold]) != 1: # (xold, yold) is in a bond
+            nbr_bond_inc -= 1 # will lose a bond
+            
+        bond_choice = [bpoint for bpoint in self.space.neighbor((xnew, ynew)) if self.space.can_build_bond((xnew, ynew), bpoint)]
+        if bond_choice: # (x, y) can build a bond
+            nbr_bond_inc += 1 # will create a bond
+        
+        if uniform(0,1) < self.weight(nbr_bond_inc, self.beta): # 
             # removes the monomer on (xold, yold)
             # handles everything except in its polymer.locs and rspace
             self.space.safe_remove(xold, yold) 
@@ -63,8 +72,8 @@ class CornerMove(object):
                 self.space.create_bond((xnew, ynew), (xb, yb))
             
             
-    def weight(self, polymer, pointid, frompoint, topoint, beta):
+    def weight(self, nbr_bond_inc, beta):
         """
         The weight function for endmove
         """
-        return 2
+        return exp(nbr_bond_inc*beta)

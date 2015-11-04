@@ -1,10 +1,11 @@
 from random import uniform, choice
-
+from math import exp
 
 class SnakeMove(object):
-    def __init__(self, space):
+    def __init__(self, space, beta):
         self.space = space
         self.movetype = "SnakeMove"
+        self.beta = beta
     def move(self, polyid, polytyp, endtyp):
         """
         The snake move
@@ -35,9 +36,18 @@ class SnakeMove(object):
         if self.space.space[x2][y2] != 0: # site occupied, not possible to move
             return
         
-        if uniform(0,1) < self.weight(poly, endloc, poly.locs[endloc], newpoint, 1): # 
-            xold, yold = poly.locs[beginloc]
-            xnew, ynew = x2, y2
+        
+        xold, yold = poly.locs[beginloc]
+        xnew, ynew = x2, y2
+        nbr_bond_inc = 0
+        if abs(self.space.space[xold][yold]) != 1: # (xold, yold) is in a bond
+            nbr_bond_inc -= 1 # will lose a bond
+            
+        bond_choice = [bpoint for bpoint in self.space.neighbor((xnew, ynew)) if self.space.can_build_bond((xnew, ynew), bpoint)]
+        if bond_choice: # (x, y) can build a bond
+            nbr_bond_inc += 1 # will create a bond
+        
+        if uniform(0,1) < self.weight(nbr_bond_inc, self.beta): # 
             # removes the monomer on (xold, yold)
             # handles everything except in its polymer.locs and rspace
             self.space.safe_remove(xold, yold) 
@@ -64,13 +74,12 @@ class SnakeMove(object):
                 self.space.rspace[xtemp][ytemp][1] = idx
             
             # try building new bonds
-            bond_choice = [bpoint for bpoint in self.space.neighbor((xnew, ynew)) if self.space.can_build_bond(newpoint, bpoint)]
             if bond_choice:
                 (xb, yb) = choice(bond_choice)
                 self.space.create_bond((xnew, ynew), (xb, yb))
             
-    def weight(self, polymer, endid, frompoint, topoint, beta):
+    def weight(self, nbr_bond_inc, beta):
         """
         The weight function for endmove
         """
-        return 2
+        return exp(nbr_bond_inc*beta)
