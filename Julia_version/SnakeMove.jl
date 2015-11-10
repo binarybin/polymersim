@@ -1,3 +1,5 @@
+module SnakeMoveModule
+export SnakeMove, move
 
 include("Space.jl")
 using SpaceModule
@@ -8,10 +10,11 @@ end
 
 type SnakeMove
     beta :: Float64
-    EndMove() = new("SnakeMove", 0, Polymer(), [])
+    movetype :: ASCIIString
+    SnakeMove() = new(0, "SnakeMove")
 end
 
-function avail_filter(space::Space, point)
+function avail_filter(space::Space, point::Tuple{Int64,Int64})
     space.space[point[1], point[2]] == 0
 end
 
@@ -24,17 +27,17 @@ function get_possible_moves(move::SnakeMove, space::Space, poly::Polymer)
     possible_moves_tail = neighbor(space, poly.locs[endloc_tail])
 
     # this automatically chooses the filter for that geometry
-    avail_f(point) = avail_filter(Space, point) 
+    avail_f(point) = avail_filter(space, point) 
     
-    moves_head = filter(avail_filter, possible_moves_head)
-    moves_tail = filter(avail_filter, possible_moves_tail)
+    moves_head = filter(avail_f, possible_moves_head)
+    moves_tail = filter(avail_f, possible_moves_tail)
     
     append!([(endloc_head, endloc_tail, point) for point in moves_head] , # moves head, kills tail
     [(endloc_tail, endloc_head, point) for point in moves_tail] ) #moves tail, kills head
     
 end
 
-function update_reverse_checking_space(move::SnakeMove, space::Space, oldpoint, newpoint)
+function update_reverse_checking_space(move::SnakeMove, space::Space, oldpoint, newpoint, poly)
     # handle the reverse checking space
     xnew, ynew = newpoint
     xold, yold = oldpoint
@@ -61,13 +64,14 @@ function move(move::SnakeMove, space::Space, polyid::Int, polytyp::ASCIIString)
     end
     
     possible_moves = get_possible_moves(move, space, poly)
-    
+    if isempty(possible_moves)
+        return
+    end    
     (pointid, killpointid, newpoint) = possible_moves[rand(1:end)]
     oldpoint = poly.locs[killpointid]       
-    
     nbr_bond_inc = 0
     
-    if in_a_bond(old_point) # (xold, yold) is in a bond
+    if in_a_bond(space, oldpoint) # (xold, yold) is in a bond
         nbr_bond_inc -= 1 # will lose a bond
     end
     
@@ -101,7 +105,7 @@ function move(move::SnakeMove, space::Space, polyid::Int, polytyp::ASCIIString)
         end
 
         # handle the reverse checking space (This part needs to use specific geometry)
-        update_reverse_checking_space(move, space, oldpoint, newpoint)
+        update_reverse_checking_space(move, space, oldpoint, newpoint, poly)
 
         # try building new bonds
         if !isempty(bond_choice)
@@ -110,4 +114,5 @@ function move(move::SnakeMove, space::Space, polyid::Int, polytyp::ASCIIString)
         end
     end
 
+end
 end

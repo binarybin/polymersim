@@ -1,3 +1,5 @@
+module CornerMoveModule
+export CornerMove, move
 
 include("Space.jl")
 using SpaceModule
@@ -8,26 +10,27 @@ end
 
 type CornerMove
     beta :: Float64
-    CornerMove() = new("CornerMove", 0, Polymer(), [])
+    movetype :: ASCIIString
+    CornerMove() = new(0, "CornerMove")
 end
 
 function get_possible_moves(move::CornerMove, space::Space, poly::Polymer)
     # This functions needs to be created for each space and each move
     possible_moves = []
-    for pos in 1:length(move.poly.locs) - 2 # I have to use specific geometry here
+    for pos in 1:length(poly.locs) - 2 # I have to use specific geometry here
         x1, y1 = poly.locs[pos]
         x2, y2 = poly.locs[pos+1]
         x3, y3 = poly.locs[pos+2]
         if x1 != x3 && y1 != y3
             if x1 == x2 # (x1, y1), (x1, y3), (x3, y3) shape
                 assert(y1 != y2 && y2 == y3 && x2 != x3)
-                if space.space[x3][y1] == 0
-                    push!(possible_moves, (pos, (x3, y1)))
+                if space.space[x3, y1] == 0
+                    push!(possible_moves, (pos+1, (x3, y1)))
                 end
             else # (x1, y1), (x3, y1), (x3, y3) shape
                 assert(y1 == y2 && x2 == x3 && y2 != y3)
-                if space.space[x1][y3] == 0
-                    push!(possible_moves, (pos, (x1,y3)))
+                if space.space[x1, y3] == 0
+                    push!(possible_moves, (pos+1, (x1,y3)))
                 end
             end
         end
@@ -56,17 +59,17 @@ function move(move::CornerMove, space::Space, polyid::Int, polytyp::ASCIIString)
     end
     
     possible_moves = get_possible_moves(move, space, poly)
-    
+
     if isempty(possible_moves)
         return
     end
     
     (pointid, newpoint) = possible_moves[rand(1:end)]
     oldpoint = poly.locs[pointid]
-    
+
     nbr_bond_inc = 0
     
-    if in_a_bond(old_point) # (xold, yold) is in a bond
+    if in_a_bond(space, oldpoint) # (xold, yold) is in a bond
         nbr_bond_inc -= 1 # will lose a bond
     end
     
@@ -100,5 +103,5 @@ function move(move::CornerMove, space::Space, polyid::Int, polytyp::ASCIIString)
     end
 
 end
-
+end
 

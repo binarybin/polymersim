@@ -1,3 +1,6 @@
+module EndMoveModule
+export EndMove, move
+
 
 include("Space.jl")
 using SpaceModule
@@ -8,10 +11,11 @@ end
 
 type EndMove
     beta :: Float64
-    EndMove() = new("EndMove", 0, Polymer(), [])
+    movetype :: ASCIIString
+    EndMove() = new(0, "EndMove")
 end
 
-function avail_filter(space::Space, point)
+function avail_filter(space::Space, point::Tuple{Int64,Int64})
     space.space[point[1], point[2]] == 0
 end
 
@@ -24,11 +28,11 @@ function get_possible_moves(move::EndMove, space::Space, poly::Polymer)
     possible_moves_tail = neighbor(space, poly.locs[nextloc_tail])
 
     # this automatically chooses the filter for that geometry
-    avail_f(point) = avail_filter(Space, point) 
+    avail_f(point) = avail_filter(space, point) 
     
-    moves_head = filter(avail_filter, possible_moves_head)
-    moves_tail = filter(avail_filter, possible_moves_tail)
-    
+    moves_head = filter(avail_f, possible_moves_head)
+    moves_tail = filter(avail_f, possible_moves_tail)
+
     append!([(endloc_head, point) for point in moves_head] , 
     [(endloc_tail, point) for point in moves_tail] )
     
@@ -57,12 +61,16 @@ function move(move::EndMove, space::Space, polyid::Int, polytyp::ASCIIString)
     
     possible_moves = get_possible_moves(move, space, poly)
     
+    if isempty(possible_moves)
+        return
+    end
+
     (pointid, newpoint) = possible_moves[rand(1:end)]
     oldpoint = poly.locs[pointid]       
     
     nbr_bond_inc = 0
     
-    if in_a_bond(old_point) # (xold, yold) is in a bond
+    if in_a_bond(space, oldpoint) # (xold, yold) is in a bond
         nbr_bond_inc -= 1 # will lose a bond
     end
     
@@ -94,5 +102,7 @@ function move(move::EndMove, space::Space, polyid::Int, polytyp::ASCIIString)
             create_bond(space, newpoint, bpoint)
         end
     end
+
+end
 
 end
