@@ -1,3 +1,9 @@
+module SpaceModule
+
+export Polymer, Space
+export initialize, neighbor, safe_remove, safe_create, create_bond, can_build_bond, exist_bond
+
+
 using PyCall
 @pyimport itertools
 
@@ -44,15 +50,17 @@ end
 function place!(space::Space, typ::ASCIIString, poly_id::Int, locs::Array{Tuple{Int, Int}, 1})
     if typ == "sim"
         spacetype = 1
+        polymers = space.Sims
     elseif typ == "sumo"
         spacetype = -1
+        polymers = space.Sumos
     else
         error("Unrecognized polymer type.")
     end
     poly = Polymer()
     poly.poly_id = poly_id
     poly.locs = locs
-    push!(space.Sims, poly)
+    push!(polymers, poly)
     for pair in enumerate(locs)
         idx, (x, y) = pair
         space.space[x, y] = spacetype
@@ -107,11 +115,12 @@ function neighbor(space, point):
     [(mod(pp[1]-1, space.Lx)+1, mod(pp[2]-1, space.Ly)+1) for pp in four_points] 
 end
 
-function safe_remove(space, x, y):
+function safe_remove(space, point):
     """
-    Removes the monomer at (x, y) and
+    Removes the monomer at point and
     safely register the change except on polymer.locs and rspace
     """
+    x, y = point
     assert(space.space[x, y] != 0)
     space.space[x, y] = 0
 
@@ -127,11 +136,12 @@ end
 
 
 
-function safe_create(space, x, y, polyvalue)
+function safe_create(space, point, polyvalue)
     """
-    Create the monomer at (x, y) and
+    Create the monomer at point and
     safely register the change except on polymer.locs and rspace
     """
+    x, y = point
     assert(space.space[x, y] == 0)
     space.space[x, y] = polyvalue 
 end
@@ -164,14 +174,9 @@ function exist_bond(space, point1, point2)
     space.space[x1, y1] * space.space[x2, y2] == -4
 end
 
-space = Space(10, 10, 10, 10, 30, 30)
-initialize(space)
+function in_a_bond(space, point)
+    x, y = point
+    abs(space.space[x][y]) != 1
+end
 
-create_bond(space, (1, 5), (30, 5))
-create_bond(space, (1, 7), (30, 7))
-safe_remove(space, 1, 5)
-safe_create(space, 1, 5 ,1)
-
-@pyimport matplotlib.pyplot as plt
-plt.imshow(space.space)
-plt.show()
+end
