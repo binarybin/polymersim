@@ -74,9 +74,9 @@ function move(move::EndMove, space::Space, polyid::Int, polytyp::ASCIIString)
         nbr_bond_inc -= 1 # will lose a bond
     end
     
-    bond_filter(bpoint) = can_build_bond(space, newpoint, bpoint)
+    bond_filter(bpoint) = can_build_bond_tentative(space, sitevalue, bpoint)
     bond_choice = filter(bond_filter, neighbor(space, newpoint))
-    
+
     if !isempty(bond_choice) # (x, y) can build a bond
         nbr_bond_inc += 1 # will create a bond
     end
@@ -98,7 +98,7 @@ function move(move::EndMove, space::Space, polyid::Int, polytyp::ASCIIString)
 
         # try building new bonds
         if !isempty(bond_choice)
-            bpoint = choice(bond_choice)
+            bpoint = bond_choice[rand(1:end)]
             create_bond(space, newpoint, bpoint)
         end
     end

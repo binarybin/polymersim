@@ -39,7 +39,7 @@ if __name__ == "__main__":
     app = App(30, 20, 30, 20, 120, 100)
    # fig = plt.figure()
     time1 = time()
-    for step in range(100000):
+    for step in range(1000000):
         app.proceed()
     time2 = time()
     print "delta t: ", time2-time1, " seconds"

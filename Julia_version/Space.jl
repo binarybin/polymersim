@@ -1,7 +1,7 @@
 module SpaceModule
 
 export Polymer, Space
-export initialize, neighbor, safe_remove, safe_create, create_bond, can_build_bond, exist_bond, in_a_bond
+export initialize, neighbor, safe_remove, safe_create, create_bond, can_build_bond, exist_bond, in_a_bond, can_build_bond_tentative
 
 
 using PyCall
@@ -179,4 +179,8 @@ function in_a_bond(space, point)
     abs(space.space[x, y]) != 1
 end
 
+function can_build_bond_tentative(space, sitevalue, bpoint)
+    xb, yb = bpoint
+    space.space[xb, yb] * sitevalue == -1
+end
 end
