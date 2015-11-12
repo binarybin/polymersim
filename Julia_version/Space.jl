@@ -70,7 +70,11 @@ function place!(space::Space, typ::ASCIIString, poly_id::Int, locs::Array{Tuple{
 end
 
 function Cprod(x::Array{Int, 1}, y::Array{Int, 1})
-    convert(Array{Tuple{Int, Int}, 1}, collect(itertools.product(x, y)))
+    ll = []
+    for ele in itertools.product(x, y)
+        push!(ll, ele)
+    end
+    convert(Array{Tuple{Int, Int}, 1}, ll)
 end
 
 function dilute_init(space::Space, direction::Char)

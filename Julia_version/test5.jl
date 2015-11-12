@@ -16,7 +16,7 @@ sm = SnakeMove()
 nsim = 150
 nsumo = 250
 beta = 3
-total_run = 2000000000
+total_run = 20000
 
 space = Space(nsim, 20, nsumo, 20, 250, 250)
 
