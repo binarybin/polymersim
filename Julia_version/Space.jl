@@ -85,7 +85,7 @@ function dilute_init(space::Space, direction::Char)
     elseif direction == 'h'
         dl = div(space.Ly, (space.NSim + space.NSumo))
         for y in collect(1:space.NSim)
-            palce!(space, "sim", y, Cprod([1:space.LSim], collect((y-1) * dl)+1))
+            place!(space, "sim", y, Cprod(collect(1:space.LSim), [(y-1) * dl+1]))
         end
         for y in collect(1:space.NSumo)
             place!(space, "sumo", y, Cprod(collect(1:space.LSumo), [(space.Ly-(y-1))*dl]))
@@ -95,14 +95,96 @@ function dilute_init(space::Space, direction::Char)
     end
 end
 
+function dense_init(space::Space, direction::Char, rows)
+    if direction == 'v'
+        if space.LSim * rows > space.Ly || space.LSumo * rows > space.Ly
+            error("too many rows to initialize polymers")
+        end
+        dx = div(space.Lx, cld(space.NSim, rows)+cld(space.NSumo, rows) )
+        println("Dense initialization: dx = ", dx)
+        print("dx = ", space.Lx, " /(", cld(space.NSim, rows), " + ", cld(space.NSumo, rows), ")\n")
+        if dx == 0
+            error("Just a little bit too dense. This can be settled but the current implementation does not support.")
+        end
+        dy = div(space.Ly, rows)
+        count_sim = 0
+        lines_sim = cld(space.NSim, rows)
+        for xidx in collect(1:lines_sim)
+            if count_sim >= space.NSim
+                break
+            end
+            x = (xidx - 1)*dx + 1
+            for yidx in collect(1:rows)
+                if count_sim >= space.NSim
+                    break
+                end
+                y = (yidx - 1)*dy + 1
+                count_sim += 1
+                println("Initializing SIM ", count_sim, " row ", x, " column ", y)
+                
+                place!(space, "sim", count_sim, Cprod([x], collect(y:y+space.LSim-1)))
+                
+            end
+        end
+        count_sumo = 0
+        lines_sumo = cld(space.NSumo, rows)
+        for xidx in collect(1:lines_sumo)
+            if count_sumo >= space.NSumo
+                break
+            end
+            x = (xidx - 1 + lines_sim) * dx + 1
+            for yidx in collect(1:rows)
+                if count_sumo >= space.NSumo
+                    break
+                end
+                y = (yidx - 1) * dy + 1
+                count_sumo += 1
+                println("Initializing SUMO ", count_sumo, " row ", x, " column ", y)
+                place!(space, "sumo", count_sumo, Cprod([x], collect(y:y+space.LSumo-1)))                
+            end
+        end
+    elseif direction == 'h'
+        error("the horizontal version is buggy, disabled")
+        if space.LSim * rows > space.Lx || space.LSumo * rows > space.Lx
+            error("too many rows to initialize polymers")
+        end
+        dx = div(space.Lx, rows)
+        dy = div(space.Ly, cld(space.NSim, rows) + cld(space.NSumo, rows))
+        if dy == 0
+            error("Just a little bit too dense. This can be settled but the current implementation does not support.")
+        end
+        for y in collect(1:space.NSim)
+            for x in collect(1:dx:space.Lx)[1:end-1]
+                place!(space, "sim", y, Cprod(collect(x:x+space.LSim-1), [(y-1) * dy+1]))
+            end
+        end
+        for y in collect(1:space.NSumo)
+            for x in collect(1:dx:space.Lx)[1:end-1]
+                place!(space, "sumo", y, Cprod(collect(x:x+space.LSumo-1), [(y-1+space.NSim)*dy + 1]))
+            end
+        end
+    else
+        error("initialization direction undefined")
+    end
+end
 
 function initialize(space::Space)
     if max(space.LSim, space.LSumo) <= space.Ly && space.NSim+space.NSumo < space.Lx
+        println("Used dilute initialization.")
         dilute_init(space, 'v')
     elseif max(space.LSim, space.LSumo) <= space.Lx && space.NSim+space.NSumo < space.Ly
+        println("Used dilute initialization.")
         dilute_init(space, 'h')
     else
-        error("Polymer too dense, cannot initiate.")
+        rows_min = cld(space.NSim+space.NSumo, space.Lx)
+        rows_max = fld(space.Ly, max(space.LSim, space.LSumo))
+        if rows_max < rows_min
+            error("Dense initialization failed")
+        else
+            rows = convert(Int, floor( sqrt(rows_max * rows_min)))
+        end
+        println("Used dense initialization with rows = ", rows)
+        dense_init(space, 'v', rows)
     end
 end
     

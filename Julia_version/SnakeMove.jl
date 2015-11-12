@@ -63,13 +63,15 @@ function move(move::SnakeMove, space::Space, polyid::Int, polytyp::ASCIIString)
         error("polymer type undefined")
     end
     
+    nbr_bond_inc = 0
+    
     possible_moves = get_possible_moves(move, space, poly)
     if isempty(possible_moves)
-        return
+        return (false, nbr_bond_inc)
     end    
     (pointid, killpointid, newpoint) = possible_moves[rand(1:end)]
     oldpoint = poly.locs[killpointid]       
-    nbr_bond_inc = 0
+    
     
     if in_a_bond(space, oldpoint) # (xold, yold) is in a bond
         nbr_bond_inc -= 1 # will lose a bond
@@ -112,6 +114,9 @@ function move(move::SnakeMove, space::Space, polyid::Int, polytyp::ASCIIString)
             bpoint = bond_choice[rand(1:end)]
             create_bond(space, newpoint, bpoint)
         end
+        return (true, nbr_bond_inc)
+    else
+        return (false, nbr_bond_inc)
     end
 
 end
