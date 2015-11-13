@@ -1,8 +1,8 @@
-module CornerMoveModule
-export CornerMove, move
+#module CornerMoveModule
+#export CornerMove, move
 
 include("Space.jl")
-using SpaceModule
+#using SpaceModule
 
 function weight(nbr_bond_inc, beta)
     exp(nbr_bond_inc*beta)
@@ -113,5 +113,5 @@ function move(move::CornerMove, space::Space, polyid::Int, polytyp::ASCIIString)
     
 
 end
-end
+#end
 

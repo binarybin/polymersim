@@ -1,9 +1,9 @@
-module EndMoveModule
-export EndMove, move
+#module EndMoveModule
+#export EndMove, move
 
 
 include("Space.jl")
-using SpaceModule
+#using SpaceModule
 
 function weight(nbr_bond_inc, beta)
     exp(nbr_bond_inc*beta)
@@ -108,4 +108,4 @@ function move(move::EndMove, space::Space, polyid::Int, polytyp::ASCIIString)
 
 end
 
-end
+#end

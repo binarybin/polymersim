@@ -1,131 +1,53 @@
+include("App.jl")
 
-include("Space.jl")
-include("EndMove.jl")
-include("SnakeMove.jl")
-include("CornerMove.jl")
-
-using SpaceModule
-using EndMoveModule
-using SnakeMoveModule
-using CornerMoveModule
-
-em = EndMove()
-cm = CornerMove()
-sm = SnakeMove()
-
-nsim = 150
-nsumo = 250
 beta = 3
-total_run = 20000
 
-space = Space(nsim, 20, nsumo, 20, 250, 250)
-
-initialize(space)
-
-move(move::SnakeMove, space::Space, polyid::Int, polytyp::ASCIIString) =
-    SnakeMoveModule.move(move, space, polyid, polytyp)
-
-move(move::EndMove, space::Space, polyid::Int, polytyp::ASCIIString) = 
-    EndMoveModule.move(move, space, polyid, polytyp)
-
-move(move::CornerMove, space::Space, polyid::Int, polytyp::ASCIIString) = 
-    CornerMoveModule.move(move, space, polyid, polytyp)
-
-function run()
-    running_scale = 10000 # scale for running average for success rates
+function run(app::App, space::Space)
+    initialize(space)
     
-    cm_succ = 0
-    cm_succ_list = []
-    sm_succ = 0
-    sm_succ_list = []
-    em_succ = 0
-    em_succ_list = []
+    em = EndMove()
+    cm = CornerMove()
+    sm = SnakeMove()
     
-    energylist = []
-    energy = 0
-    one_percent = div(total_run, 100)
-    for run_idx in 1:total_run
-        if mod(run_idx, running_scale) == 1
-            push!(cm_succ_list, cm_succ/(2*running_scale))
-            push!(sm_succ_list, sm_succ/(2*running_scale))
-            push!(em_succ_list, em_succ/(2*running_scale))
-            sm_succ = 0
-            em_succ = 0
-            cm_succ = 0
+    one_percent = div(app.total_run, 100)
+    
+    for run_idx in 1:app.total_run
+        if mod(run_idx, app.running_scale) == 1
+            reset_succ(app)
         end
         
         if mod(run_idx, one_percent) == 0
             println(div(run_idx, one_percent), " percent finished")
         end
         
-        (success, bond_change) = move(sm, space, rand(1:nsim), "sim")
-        if success
-            sm_succ += 1
-            energy -= bond_change
-        end
+        stochastic_move(app, em, space)
+        stochastic_move(app, sm, space)
+        stochastic_move(app, cm, space)
         
-        (success, bond_change) = move(sm, space, rand(1:nsumo), "sumo")
-        if success
-            sm_succ += 1
-            energy -= bond_change
-        end
-        
-        (success, bond_change) = move(em, space, rand(1:nsim), "sim")
-        if success
-            em_succ += 1
-            energy -= bond_change
-        end
-        
-        (success, bond_change) = move(em, space, rand(1:nsumo), "sumo")
-        if success
-            em_succ += 1
-            energy -= bond_change
-        end
-        
-        (success, bond_change) = move(cm, space, rand(1:nsim), "sim")
-        if success
-            cm_succ += 1
-            energy -= bond_change
-        end
-        
-        (success, bond_change) = move(cm, space, rand(1:nsumo), "sumo")
-        if success
-            cm_succ += 1
-            energy -= bond_change
-        end
-        
-        if run_idx == div(total_run, 2)
+        if run_idx == div(app.total_run, 2)
             sm.beta = beta
             cm.beta = beta
             em.beta = beta
         end
-        push!(energylist, energy)
+        push!(app.energy_list, app.energy)
     end
-#    println("Energy scale: ", energylist)
-#    println("Snake Move Success rate: ", sm_succ_list)
-#    println("Corner Move Success rate: ", cm_succ_list)
-#    println("End Move Success rate: ", em_succ_list)
-    return (cm_succ_list, sm_succ_list, em_succ_list, energylist)
 end
 
-@time result = run()
-(cm_succ_list, sm_succ_list, em_succ_list, energy_list) = result
-#println(space.space)
-using PyCall
-@pyimport pylab
-pylab.figure()
-pylab.plot(cm_succ_list)
-pylab.plot(sm_succ_list)
-pylab.plot(em_succ_list)
-pylab.show()
+NSim = 150
+LSim = 20
+NSumo = 250
+LSumo = 20
+Lx = 150
+Ly = 150
 
-pylab.figure()
-pylab.plot(energy_list)
-pylab.show()
+app = App(10000, 100000, NSim, LSim, NSumo, LSumo, Lx, Ly)
+space = Space(app.NSim, app.LSim, app.NSumo, app.LSumo, app.Lx, app.Ly)
 
-pylab.figure()
-pylab.imshow(space.space)
-pylab.show()
+@time run(app, space)
+@time open("app", "w") do file
+    serialize(file, app)
+end
 
-
-
+@time open("data", "w") do file
+    serialize(file, space)
+end
