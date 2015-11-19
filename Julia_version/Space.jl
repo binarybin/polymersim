@@ -1,9 +1,3 @@
-
-
-#export Polymer, Space
-#export initialize, neighbor, safe_remove, safe_create, create_bond, can_build_bond, exist_bond, in_a_bond, can_build_bond_tentative
-
-
 using PyCall
 @pyimport itertools
 
@@ -11,8 +5,7 @@ NOBOND = 0
 
 type Polymer
     poly_id :: Int
-    locs :: Array{Tuple{Int, Int}, 1}
-    Polymer() = new(0, [])
+    Polymer() = new(0)
 end
 
 type Space
@@ -20,54 +13,14 @@ type Space
     LSim :: Int
     NSumo :: Int
     LSumo :: Int
-    Lx :: Int
-    Ly :: Int
-    space :: Array{Int, 2}
-    bond :: Array{Int, 3}
-    rspace :: Array{Int, 3}
-    Sims :: Array{Polymer, 1}
-    Sumos :: Array{Polymer, 1}
+    
     SimId :: Int
     SumoId :: Int
     
-    Space(NSim :: Int,
-            LSim :: Int,
-            NSumo :: Int,
-            LSumo :: Int,
-            Lx :: Int,
-            Ly :: Int) = 
-    new(NSim, LSim, NSumo, LSumo, Lx, Ly,
-    zeros(Lx, Ly),
-    zeros(Lx, Ly, 2),
-    zeros(Lx, Ly, 2),
-    Polymer[],
-    Polymer[],
-    0,
-    0)
+    Space(NSim :: Int, LSim :: Int, NSumo :: Int, LSumo :: Int) = 
+    new(NSim, LSim, NSumo, LSumo, 0, 0)
 end   
 
-
-function place!(space::Space, typ::ASCIIString, poly_id::Int, locs::Array{Tuple{Int, Int}, 1})
-    if typ == "sim"
-        spacetype = 1
-        polymers = space.Sims
-    elseif typ == "sumo"
-        spacetype = -1
-        polymers = space.Sumos
-    else
-        error("Unrecognized polymer type.")
-    end
-    poly = Polymer()
-    poly.poly_id = poly_id
-    poly.locs = locs
-    push!(polymers, poly)
-    for pair in enumerate(locs)
-        idx, (x, y) = pair
-        space.space[x, y] = spacetype
-        space.rspace[x, y, 1] = poly_id
-        space.rspace[x, y, 2] = idx
-    end
-end
 
 function Cprod(x::Array{Int, 1}, y::Array{Int, 1})
     ll = []
