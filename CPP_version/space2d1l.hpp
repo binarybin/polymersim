@@ -18,7 +18,6 @@
 #include <fstream>
 #include <iomanip>
 #include "position.h"
-#include "space.hpp"
 using std::vector;
 using std::max;
 using std::remove_if;
@@ -26,18 +25,25 @@ using std::cout;
 using std::endl;
 using std::invalid_argument;
 
-class Space2D1L : protected Space
+class Space2D1L
 {
+public:
+    int NSim, LSim, NSumo, LSumo;
+    size_t Lx, Ly;
+    int SimId, SumoId;
+    vector<Polymer> Sims;
+    vector<Polymer> Sumos;
     friend std::ostream& PrintSpaceOccupation(std::ostream &out, Space2D1L &space);
     vector<vector<int>> space;
     vector<vector<vector<int>>> bond;
     vector<vector<vector<int>>> rspace;
     
-public:
+
     Space2D1L(int nsim, int nsumo, int lsim, int lsumo, size_t lx, size_t ly) :
-        Space(nsim, nsumo, lsim, lsumo, lx, ly, 0),
+    NSim(nsim), NSumo(nsumo), LSim(lsim), LSumo(lsumo), Lx(lx), Ly(ly),
+    SimId(0), SumoId(0),
         space(lx, vector<int>(ly)),
-        bond(lx, vector<vector<int>>(ly, vector<int>(2))),
+        bond(lx, vector<vector<int>>(ly, vector<int>(2, NOBOND))),
         rspace(lx, vector<vector<int>>(ly, vector<int>(2)))
     {}
     
@@ -151,24 +157,11 @@ public:
     void DenseInit(int rows);
     void Place(char typ, int id, vector<Position> locs) // i for sim, u for sumo
     {
-        int spacetype = 0;
-        vector<Polymer>& polymers = Sims;
-        if (typ=='i')
-        {
-            spacetype = 1;
-            polymers = Sims;
-            assert(locs.size() == LSim);
-        }
-        else if (typ == 'u')
-        {
-            spacetype = -1;
-            polymers = Sumos;
-            assert(locs.size() == LSumo);
-        }
-        else
-            throw std::invalid_argument("Unrecognized polymer type");
+        int spacetype = (typ == 'i')? 1 : -1;
+        vector<Polymer>& polymers = (typ=='i')? Sims : Sumos;
         
         Polymer poly(id, locs.size());
+        poly.locs = locs;
         polymers.push_back(poly);
         
         for (int idx = 0; idx < locs.size(); idx++)
@@ -176,7 +169,7 @@ public:
             int x = locs[idx].x;
             int y = locs[idx].y;
             space[x][y] = spacetype;
-            rspace[x][y][0] = id+1;
+            rspace[x][y][0] = id;
             rspace[x][y][1] = idx;
         }
     }

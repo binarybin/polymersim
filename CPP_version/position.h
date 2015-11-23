@@ -9,6 +9,9 @@
 #ifndef position_h
 #define position_h
 
+#include <vector>
+using std::vector;
+
 class Position
 {
 public:
@@ -17,5 +20,20 @@ public:
     Position(int input_x, int input_y): x(input_x), y(input_y), z(0), layer(0) {}
     Position(): x(0), y(0), z(0), layer(0) {}
 };
+
+int static NOBOND = -1;
+
+class Polymer {
+public:
+    int poly_id;
+    vector<Position> locs;
+    
+    Polymer(int id, size_t size) : poly_id(id)
+    {
+        this->locs.resize(size);
+    }
+    Polymer(){}
+};
+
 
 #endif /* position_h */
