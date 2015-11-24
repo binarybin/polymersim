@@ -11,12 +11,12 @@
 
 tuple<bool, int> Move::ExecMove(int polyid, char polytyp)
 {
-    Polymer poly = polytyp=='i' ? space.Sims[polyid] : space.Sumos[polyid];
+    Polymer& poly = polytyp=='i' ? space.Sims[polyid-1] : space.Sumos[polyid-1];
     int sitevalue = polytyp=='i' ? 1 : -1;
     
     int nbr_bond_inc = 0;
     vector<tuple<int, Position>> possible_moves = GetPossibleMoves(poly);
-    cout<<poly.locs[0].x<<endl;
+
     if (possible_moves.empty()) return make_tuple(false, nbr_bond_inc);
     
     int pointid = 0; Position newpoint; tie(pointid, newpoint) = ChooseMove(possible_moves);
@@ -38,7 +38,7 @@ tuple<bool, int> Move::ExecMove(int polyid, char polytyp)
         space.SafeRemove(oldpoint);
         space.SafeCreate(newpoint, sitevalue);
         UpdatePolymer(poly, pointid, newpoint);
-        UpdateReverseCheckingSpace(oldpoint, newpoint);
+        UpdateReverseCheckingSpace(oldpoint, newpoint, poly);
         
         if (!bond_choice.empty())
         {

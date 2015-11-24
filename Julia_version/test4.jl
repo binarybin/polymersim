@@ -15,8 +15,8 @@ sm = SnakeMove()
 
 nsim = 150
 nsumo = 250
-beta = 3
-total_run = 200000000
+beta = 0
+total_run = 10000
 
 space = Space(nsim, 20, nsumo, 20, 250, 250)
 
@@ -32,7 +32,6 @@ move(move::CornerMove, space::Space, polyid::Int, polytyp::ASCIIString) =
     CornerMoveModule.move(move, space, polyid, polytyp)
 
 function run()
-    running_scale = 10000 # scale for running average for success rates
     
     cm_succ = 0
     cm_succ_list = []

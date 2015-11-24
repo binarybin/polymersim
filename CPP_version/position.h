@@ -15,10 +15,9 @@ using std::vector;
 class Position
 {
 public:
-    int x, y, z;
-    char layer;
-    Position(int input_x, int input_y): x(input_x), y(input_y), z(0), layer(0) {}
-    Position(): x(0), y(0), z(0), layer(0) {}
+    int x, y;
+    Position(int input_x, int input_y): x(input_x), y(input_y) {}
+    Position(): x(0), y(0) {}
 };
 
 int static NOBOND = -1;

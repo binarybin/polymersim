@@ -21,12 +21,12 @@ public:
         poly.locs[pointid] = newpoint;
     }
     
-    void UpdateReverseCheckingSpace(Position& oldpoint, Position& newpoint)
+    void UpdateReverseCheckingSpace(Position& oldpoint, Position& newpoint, Polymer& poly)
     {
         int xnew = newpoint.x; int ynew = newpoint.y;
         int xold = oldpoint.x; int yold = oldpoint.y;
         
-        assert(space.rspace[xnew][ynew][0] == 0 && space.rspace[xnew][ynew][1] == 0);
+        assert(space.rspace[xnew][ynew][0] == 0);
         space.rspace[xnew][ynew][0] = space.rspace[xold][yold][0];
         space.rspace[xnew][ynew][1] = space.rspace[xold][yold][1];
         space.rspace[xold][yold][0] = 0;
@@ -53,7 +53,7 @@ public:
                 else
                 {
                     assert(y1 == y2 && x2 == x3 && y2 != y3);
-                    if (space.space[x1][x3] == 0)
+                    if (space.space[x1][y3] == 0)
                         possible_moves.push_back(make_tuple(pos+1, Position(x1, y3)));
                 }
             }

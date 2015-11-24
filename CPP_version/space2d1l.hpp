@@ -33,7 +33,6 @@ public:
     int SimId, SumoId;
     vector<Polymer> Sims;
     vector<Polymer> Sumos;
-    friend std::ostream& PrintSpaceOccupation(std::ostream &out, Space2D1L &space);
     vector<vector<int>> space;
     vector<vector<vector<int>>> bond;
     vector<vector<vector<int>>> rspace;
@@ -49,22 +48,20 @@ public:
     
     void Initialize()
     {
-        if (max(this->LSim, this->LSumo) <= this->Ly
-            && this->NSim + this->NSumo < this->Lx)
+        if (max(LSim, LSumo) <= Ly && NSim + NSumo < Lx)
         {
             cout << "Used dilute initialization, horizontal" <<endl;
-            this->DiluteInit('h');
+            DiluteInit('h');
         }
-        else if (max(this->LSim, this->LSumo) <= this->Lx
-            && this->NSim + this->NSumo < this->Ly)
+        else if (max(LSim, LSumo) <= Lx && NSim + NSumo < Ly)
         {
             cout << "Used dilute initialization, horizontal" <<endl;
-            this->DiluteInit('v');
+            DiluteInit('v');
         }
         else
         {
-            int rows_min = ceil((this->NSim + this->NSumo)/this->Lx);
-            int rows_max = floor(this->Ly / max(this->LSim, this->LSumo));
+            int rows_min = ceil((NSim + NSumo)/Lx);
+            int rows_max = floor(Ly / max(LSim, LSumo));
             int rows = -1;
             
             if (rows_max < rows_min)
@@ -72,7 +69,7 @@ public:
             else
                 rows = floor(sqrt(rows_max * rows_min));
             cout << "Used dense initialization with " << rows << " rows" << endl;
-            this -> DenseInit(rows);
+            DenseInit(rows);
         }
     }
     
@@ -80,7 +77,7 @@ public:
     {
         int x = point.x;
         int y = point.y;
-        return {Position((x+1)%Lx, y), Position((x-1)%Lx, y), Position(x, (y+1)%Ly), Position(x, (y-1)%Ly)};
+        return {Position((x+1)%Lx, y), Position((x-1+(int)Lx)%Lx, y), Position(x, (y+1)%Ly), Position(x, (y-1+(int)Ly)%Ly)};
     }
     
     void SafeRemove(Position point)
@@ -125,6 +122,7 @@ public:
         
         assert(bond[x1][y1][0] == NOBOND && bond[x1][y1][1] == NOBOND);
         assert(bond[x2][y2][0] == NOBOND && bond[x2][y2][1] == NOBOND);
+        assert(abs(space[x1][y1]) == 1 && abs(space[x2][y2]));
         
         bond[x1][y1][0] = x2, bond[x1][y1][1] = y2;
         bond[x2][y2][0] = x1, bond[x2][y2][1] = y1;
@@ -145,7 +143,7 @@ public:
     
     bool InABond(Position point)
     {
-        return abs(space[point.x][point.y]) != 1;
+        return abs(space[point.x][point.y]) != 1 && abs(space[point.x][point.y]) != 0;
     }
     
     bool CanBuildBondTentative(Position bpoint, int sitevalue)
@@ -178,6 +176,7 @@ public:
     
 };
 
-std::ostream& PrintSpaceOccupation(std::ostream &out, Space2D1L &space);
-
+std::ostream& PrintSpace(std::ostream &out, Space2D1L &space);
+std::ostream& PrintBond(std::ostream &out, Space2D1L &space);
+std::ostream& PrintPolymer(std::ostream &out, Space2D1L &space);
 #endif /* space2d1l_hpp */

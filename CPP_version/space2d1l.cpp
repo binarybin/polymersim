@@ -8,7 +8,7 @@
 
 #include "space2d1l.hpp"
 
-std::ostream& PrintSpaceOccupation(std::ostream &out, Space2D1L &space)
+std::ostream& PrintSpace(std::ostream &out, Space2D1L &space)
 {
     out<<"Two dimensional single layer space"<<endl;
     out<<"Site occupation configuration: "<<endl;
@@ -19,6 +19,44 @@ std::ostream& PrintSpaceOccupation(std::ostream &out, Space2D1L &space)
             out<<std::setw(3)<<space.space[i][j];
         }
         out<<endl;
+    }
+    out<<"END"<<endl;
+    return out;
+}
+
+std::ostream& PrintBond(std::ostream &out, Space2D1L &space)
+{
+    out<<"Two dimensional single layer space"<<endl;
+    out<<"Bond configuration: "<<endl;
+    for (int i = 0; i < space.Lx; i++)
+    {
+        for (int j = 0; j < space.Ly; j++)
+        {
+            out<<std::setw(7)<<"("<<space.bond[i][j][0]<<","<<space.bond[i][j][1]<<")";
+        }
+        out<<endl;
+    }
+    out<<"END"<<endl;
+    return out;
+}
+
+std::ostream& PrintPolymer(std::ostream &out, Space2D1L &space)
+{
+    out<<"Two dimensional single layer space"<<endl;
+    out<<"Sims: "<<endl;
+    for (int i = 0; i < space.Sims.size(); i++)
+    {
+        cout<<"Sim Nbr "<<i<<endl;
+        for (auto loc : space.Sims[i].locs)
+            cout<<"("<<loc.x<<","<<loc.y<<")"<<" ";
+        cout<<endl;
+    }
+    for (int i = 0; i < space.Sumos.size(); i++)
+    {
+        cout<<"Sumo Nbr "<<i<<endl;
+        for (auto loc : space.Sumos[i].locs)
+            cout<<"("<<loc.x<<","<<loc.y<<")"<<" ";
+        cout<<endl;
     }
     out<<"END"<<endl;
     return out;

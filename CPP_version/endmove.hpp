@@ -21,12 +21,12 @@ public:
         poly.locs[pointid] = newpoint;
     }
     
-    void UpdateReverseCheckingSpace(Position& oldpoint, Position& newpoint)
+    void UpdateReverseCheckingSpace(Position& oldpoint, Position& newpoint, Polymer& poly)
     {
         int xnew = newpoint.x; int ynew = newpoint.y;
         int xold = oldpoint.x; int yold = oldpoint.y;
         
-        assert(space.rspace[xnew][ynew][0] == 0 && space.rspace[xnew][ynew][1] == 0);
+        assert(space.rspace[xnew][ynew][0] == 0);
         space.rspace[xnew][ynew][0] = space.rspace[xold][yold][0];
         space.rspace[xnew][ynew][1] = space.rspace[xold][yold][1];
         space.rspace[xold][yold][0] = 0;
@@ -35,7 +35,7 @@ public:
     
     vector<tuple<int, Position>> GetPossibleMoves(Polymer& poly)
     {
-        int endloc_head = 1; int nextloc_head = 2;
+        int endloc_head = 0; int nextloc_head = 1;
         int endloc_tail = (int)poly.locs.size() - 1; int nextloc_tail = (int)poly.locs.size() - 2;
         vector<tuple<int, Position>> possible_moves;
         

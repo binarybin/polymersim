@@ -48,7 +48,7 @@ public:
     }
     
     virtual void UpdatePolymer(Polymer& poly, int pointid, Position& newpoint) = 0;
-    virtual void UpdateReverseCheckingSpace(Position& oldpoint, Position& newpoint) = 0;
+    virtual void UpdateReverseCheckingSpace(Position& oldpoint, Position& newpoint, Polymer& poly) = 0;
     virtual vector<tuple<int, Position>> GetPossibleMoves(Polymer& poly) = 0;
     
     double Weight(int nbr_bond_inc) {return exp(nbr_bond_inc * beta);}
