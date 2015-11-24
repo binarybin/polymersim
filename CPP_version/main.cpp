@@ -27,12 +27,12 @@ int main(int argc, const char * argv[])
 void test_nomove()
 {
     cout<<"Test of the polymer simulator"<<endl;
-    int nsim = 5;
-    int nsumo = 5;
-    int lsim = 5;
-    int lsumo = 5;
-    size_t lx = 20;
-    size_t ly = 10;
+    int nsim = 30;
+    int nsumo = 20;
+    int lsim = 30;
+    int lsumo = 20;
+    size_t lx = 120;
+    size_t ly = 100;
     Space2D1L test_tube(nsim, nsumo, lsim, lsumo, lx, ly);
     
     cout<<"Test initialization"<<endl;
@@ -228,12 +228,12 @@ void test_longmove()
 void test_longmovespeed()
 {
     cout<<"Test of the polymer simulator"<<endl;
-    int nsim = 150;
-    int nsumo = 250;
-    int lsim = 20;
+    int nsim = 30;
+    int nsumo = 20;
+    int lsim = 30;
     int lsumo = 20;
-    size_t lx = 250;
-    size_t ly = 250;
+    size_t lx = 120;
+    size_t ly = 100;
     Space2D1L test_tube(nsim, nsumo, lsim, lsumo, lx, ly);
     
     cout<<"Test initialization"<<endl;
@@ -242,8 +242,8 @@ void test_longmovespeed()
     SnakeMove sm(test_tube);
     EndMove em(test_tube);
     CornerMove cm(test_tube);
-    
-    for (int i = 0; i < 10000; i++)
+    clock_t begin = clock();
+    for (int i = 0; i < 1000000; i++)
     {
         char typ_r = 0;
         int id_r = 0;
@@ -260,6 +260,9 @@ void test_longmovespeed()
         id_r = 1 + ((double)rand()/RAND_MAX * (typ_r == 'i' ? test_tube.LSim : test_tube.LSumo));
         em.ExecMove(id_r, typ_r);
     }
+    clock_t end = clock();
+    double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+    cout<<elapsed_secs<<" seconds"<<endl;
 //    PrintSpace(std::cout, test_tube);
 //    PrintBond(std::cout, test_tube);
 //    PrintPolymer(std::cout, test_tube);
