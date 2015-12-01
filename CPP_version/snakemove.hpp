@@ -9,14 +9,20 @@
 #ifndef snakemove_hpp
 #define snakemove_hpp
 
-#include "move.hpp"
+#include <tuple>
+#include <vector>
 
-class SnakeMove : public Move
+using std::tuple;
+using std::vector;
+using std::make_tuple;
+
+template <class S, class P>
+class SnakeMove
 {
 public:
-    SnakeMove(Space2D1L& space) : Move(space) {}
-    
-    void UpdatePolymer(Polymer& poly, int pointid, Position& newpoint)
+    S& space;
+    SnakeMove(S& thespace): space(thespace) {}
+    void UpdatePolymer(Polymer<P>& poly, int pointid, P& newpoint)
     {
         if (pointid != 0) // move towards head
         {
@@ -30,43 +36,33 @@ public:
         }
     }
     
-    void UpdateReverseCheckingSpace(Position& oldpoint, Position& newpoint, Polymer& poly)
+    void UpdateReverseCheckingSpace(P& oldpoint, P& newpoint, Polymer<P>& poly)
     {
-        int xnew = newpoint.x; int ynew = newpoint.y;
-        int xold = oldpoint.x; int yold = oldpoint.y;
+        assert(space.GetRspacePoint(newpoint)[0] == 0);
         
-        assert(space.rspace[xnew][ynew][0] == 0);
-        
-        int polyid = space.rspace[xold][yold][0];
-        space.rspace[xold][yold][0] = 0;
-        space.rspace[xnew][ynew][1] = 0;
-        
+        int polyid = space.GetRspacePoint(oldpoint)[0];
+        space.SetRspacePoint(oldpoint, 0, 0);
         for (int i = 0; i < poly.locs.size(); i++)
-        {
-            int xtemp = poly.locs[i].x;
-            int ytemp = poly.locs[i].y;
-            
-            space.rspace[xtemp][ytemp][0] = polyid;
-            space.rspace[xtemp][ytemp][1] = i;
-        }
+            space.SetRspacePoint(poly.locs[i], polyid, i);
     }
-    
-    vector<tuple<int, Position>> GetPossibleMoves(Polymer& poly)
+
+    vector<tuple<int, P>> GetPossibleMoves(Polymer<P>& poly)
     {
-        vector<tuple<int, Position>> possible_moves;
-        int endloc_head = 0;
-        int endloc_tail = (int)poly.locs.size() - 1;
-        for (auto loc : space.Neighbor(poly.locs[endloc_head]))
-            if (space.space[loc.x][loc.y] == 0)
-                possible_moves.push_back(make_tuple(endloc_tail, loc)); // kill endloc_tail and create at loc
+        int endloc_head = 0; int nextloc_head = 1;
+        int endloc_tail = (int)poly.locs.size() - 1; int nextloc_tail = (int)poly.locs.size() - 2;
+        vector<tuple<int, P>> possible_moves;
         
-        for (auto loc : space.Neighbor(poly.locs[endloc_tail]))
-            if (space.space[loc.x][loc.y] == 0)
-                possible_moves.push_back(make_tuple(endloc_head, loc)); // kill endloc_head and create at loc
+        for (auto pos : space.Neighbor(poly.locs[nextloc_head]))
+            if (space.EmptyPos(pos))
+                possible_moves.push_back(make_tuple(endloc_head, pos));
+        
+        for (auto pos : space.Neighbor(poly.locs[nextloc_tail]))
+            if (space.EmptyPos(pos))
+                possible_moves.push_back(make_tuple(endloc_tail, pos));
+        
         return possible_moves;
     }
-    
-};
 
+};
 
 #endif /* snakemove_hpp */

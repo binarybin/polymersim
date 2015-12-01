@@ -9,9 +9,9 @@
 #include <iostream>
 #include <ctime>
 #include "space2d1l.hpp"
-#include "cornermove.hpp"
-#include "endmove.hpp"
-#include "snakemove.hpp"
+#include "space2d2l.hpp"
+#include "move.hpp"
+
 
 void test_nomove();
 void test_move();
@@ -24,6 +24,52 @@ int main(int argc, const char * argv[])
     return 0;
 }
 
+
+void test_longmovespeed()
+{
+    cout<<"Test of the polymer simulator"<<endl;
+    int nsim = 30;
+    int nsumo = 20;
+    int lsim = 30;
+    int lsumo = 20;
+    size_t lx = 120;
+    size_t ly = 100;
+    Space2D1L test_tube(nsim, nsumo, lsim, lsumo, lx, ly);
+    
+    cout<<"Test initialization"<<endl;
+    test_tube.Initialize();
+    
+    Move<Space2D1L, Pos2d1l, SnakeMove<Space2D1L, Pos2d1l>> sm(test_tube);
+    Move<Space2D1L, Pos2d1l, CornerMove<Space2D1L, Pos2d1l>> cm(test_tube);
+    Move<Space2D1L, Pos2d1l, EndMove<Space2D1L, Pos2d1l>> em(test_tube);
+    clock_t begin = clock();
+    for (int i = 0; i < 1000000; i++)
+    {
+        char typ_r = 0;
+        int id_r = 0;
+        
+        typ_r = (double)rand()/RAND_MAX > 0.5 ? 'i' : 'u';
+        id_r = 1 + ((double)rand()/RAND_MAX * (typ_r == 'i' ? test_tube.LSim : test_tube.LSumo));
+        sm.ExecMove(id_r, typ_r);
+        
+        typ_r = (double)rand()/RAND_MAX > 0.5 ? 'i' : 'u';
+        id_r = 1 + ((double)rand()/RAND_MAX * (typ_r == 'i' ? test_tube.LSim : test_tube.LSumo));
+        cm.ExecMove(id_r, typ_r);
+        
+        typ_r = (double)rand()/RAND_MAX > 0.5 ? 'i' : 'u';
+        id_r = 1 + ((double)rand()/RAND_MAX * (typ_r == 'i' ? test_tube.LSim : test_tube.LSumo));
+        em.ExecMove(id_r, typ_r);
+    }
+    clock_t end = clock();
+    double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+    cout<<elapsed_secs<<" seconds"<<endl;
+        PrintSpace(std::cout, test_tube);
+    //    PrintBond(std::cout, test_tube);
+    //    PrintPolymer(std::cout, test_tube);
+}
+
+
+/*
 void test_nomove()
 {
     cout<<"Test of the polymer simulator"<<endl;
@@ -39,41 +85,41 @@ void test_nomove()
     test_tube.Initialize();
     cout.flush();
     
-    CornerMove cm(test_tube);
-    EndMove em(test_tube);
+    CornerMove<Pos2d1l, Space2D1L> cm(test_tube);
+    EndMove<Pos2d1l, Space2D1L> em(test_tube);
     
     PrintSpace(std::cout, test_tube);
-    auto test_neighbor = test_tube.Neighbor(Position(1,2));
+    auto test_neighbor = test_tube.Neighbor(Pos2d1l(1,2));
     cout<<"Test neighbor of (1,2)"<<endl;
     for (auto itr : test_neighbor)
         cout<<"x: "<<itr.x<<" y: "<<itr.y<<endl;
     cout<<"Test SafeRemove (0, 4)"<<endl;
-    test_tube.SafeRemove(Position(0,4));
+    test_tube.SafeRemove(Pos2d1l(0,4));
     
     
     cout<<"Test SafeCreate (0,4), value -1"<<endl;
-    test_tube.SafeCreate(Position(0,4), -1);
+    test_tube.SafeCreate(Pos2d1l(0,4), -1);
     PrintSpace(std::cout, test_tube);
     
     cout<<"Test CreateBond (0,4), (0,3)"<<endl;
-    test_tube.CreateBond(Position(0,4), Position(0,3));
+    test_tube.CreateBond(Pos2d1l(0,4), Pos2d1l(0,3));
     
     
     cout<<"Test SafeRemove (0,4), the case with bond"<<endl;
-    test_tube.SafeRemove(Position(0,4));
+    test_tube.SafeRemove(Pos2d1l(0,4));
     PrintSpace(std::cout, test_tube);
     
     cout<<"Test CanBuildBond (0,4), (0,3)"<<endl;
-    cout<<test_tube.CanBuildBond(Position(0,3), Position(0,4))<<endl;
+    cout<<test_tube.CanBuildBond(Pos2d1l(0,3), Pos2d1l(0,4))<<endl;
     cout<<"Create (0,4)"<<endl;
-    test_tube.SafeCreate(Position(0,4), -1);
-    cout<<test_tube.CanBuildBond(Position(0,3), Position(0,4))<<endl;
+    test_tube.SafeCreate(Pos2d1l(0,4), -1);
+    cout<<test_tube.CanBuildBond(Pos2d1l(0,3), Pos2d1l(0,4))<<endl;
     
     cout<<"Test ExistBond (0,4), (0,3)"<<endl;
-    cout<<test_tube.ExistBond(Position(0,4), Position(0,3))<<endl;
+    cout<<test_tube.ExistBond(Pos2d1l(0,4), Pos2d1l(0,3))<<endl;
     cout<<"Build it and test"<<endl;
-    test_tube.CreateBond(Position(0,3), Position(0,4));
-    cout<<test_tube.ExistBond(Position(0,4), Position(0,3))<<endl;
+    test_tube.CreateBond(Pos2d1l(0,3), Pos2d1l(0,4));
+    cout<<test_tube.ExistBond(Pos2d1l(0,4), Pos2d1l(0,3))<<endl;
     PrintSpace(std::cout, test_tube);
     PrintBond(std::cout, test_tube);
 }
@@ -94,8 +140,8 @@ void test_move()
     test_tube.Initialize();
     cout.flush();
     
-    CornerMove cm(test_tube);
-    EndMove em(test_tube);
+    CornerMove<Pos2d1l, Space2D1L> cm(test_tube);
+    EndMove<Pos2d1l, Space2D1L> em(test_tube);
     cout<<"Redo initialization"<<endl;
     test_tube.Initialize();
     
@@ -159,7 +205,7 @@ void test_snakemove()
     test_tube.Initialize();
     cout.flush();
     
-    SnakeMove sm(test_tube);
+    SnakeMove<Pos2d1l, Space2D1L> sm(test_tube);
 
     
     PrintSpace(std::cout, test_tube);
@@ -204,8 +250,8 @@ void test_longmove()
     test_tube.Initialize();
     cout.flush();
     
-    CornerMove cm(test_tube);
-    EndMove em(test_tube);
+    CornerMove<Pos2d1l, Space2D1L> cm(test_tube);
+    EndMove<Pos2d1l, Space2D1L> em(test_tube);
     
     for (int i = 0; i < 10000; i++)
     {
@@ -223,48 +269,6 @@ void test_longmove()
     PrintSpace(std::cout, test_tube);
     PrintBond(std::cout, test_tube);
     PrintPolymer(std::cout, test_tube);
-}
+}*/
 
-void test_longmovespeed()
-{
-    cout<<"Test of the polymer simulator"<<endl;
-    int nsim = 30;
-    int nsumo = 20;
-    int lsim = 30;
-    int lsumo = 20;
-    size_t lx = 120;
-    size_t ly = 100;
-    Space2D1L test_tube(nsim, nsumo, lsim, lsumo, lx, ly);
-    
-    cout<<"Test initialization"<<endl;
-    test_tube.Initialize();
-    
-    SnakeMove sm(test_tube);
-    EndMove em(test_tube);
-    CornerMove cm(test_tube);
-    clock_t begin = clock();
-    for (int i = 0; i < 1000000; i++)
-    {
-        char typ_r = 0;
-        int id_r = 0;
-        
-        typ_r = (double)rand()/RAND_MAX > 0.5 ? 'i' : 'u';
-        id_r = 1 + ((double)rand()/RAND_MAX * (typ_r == 'i' ? test_tube.LSim : test_tube.LSumo));
-        sm.ExecMove(id_r, typ_r);
-        
-        typ_r = (double)rand()/RAND_MAX > 0.5 ? 'i' : 'u';
-        id_r = 1 + ((double)rand()/RAND_MAX * (typ_r == 'i' ? test_tube.LSim : test_tube.LSumo));
-        cm.ExecMove(id_r, typ_r);
-        
-        typ_r = (double)rand()/RAND_MAX > 0.5 ? 'i' : 'u';
-        id_r = 1 + ((double)rand()/RAND_MAX * (typ_r == 'i' ? test_tube.LSim : test_tube.LSumo));
-        em.ExecMove(id_r, typ_r);
-    }
-    clock_t end = clock();
-    double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-    cout<<elapsed_secs<<" seconds"<<endl;
-//    PrintSpace(std::cout, test_tube);
-//    PrintBond(std::cout, test_tube);
-//    PrintPolymer(std::cout, test_tube);
-}
 

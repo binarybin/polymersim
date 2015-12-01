@@ -8,46 +8,44 @@
 
 #ifndef endmove_hpp
 #define endmove_hpp
+#include <tuple>
+#include <vector>
 
-#include "move.hpp"
+using std::tuple;
+using std::vector;
+using std::make_tuple;
 
-class EndMove : public Move
+template <class S, class P> class EndMove
 {
 public:
-    EndMove(Space2D1L& space) : Move(space) {}
+    S& space;
+    EndMove(S& thespace) : space(thespace) {}
     
-    void UpdatePolymer(Polymer& poly, int pointid, Position& newpoint)
+    void UpdatePolymer(Polymer<P>& poly, int pointid, P& newpoint)
     {
         poly.locs[pointid] = newpoint;
     }
     
-    void UpdateReverseCheckingSpace(Position& oldpoint, Position& newpoint, Polymer& poly)
-    {
-        int xnew = newpoint.x; int ynew = newpoint.y;
-        int xold = oldpoint.x; int yold = oldpoint.y;
-        
-        assert(space.rspace[xnew][ynew][0] == 0);
-        space.rspace[xnew][ynew][0] = space.rspace[xold][yold][0];
-        space.rspace[xnew][ynew][1] = space.rspace[xold][yold][1];
-        space.rspace[xold][yold][0] = 0;
-        space.rspace[xnew][ynew][1] = 0;
-    }
-    
-    vector<tuple<int, Position>> GetPossibleMoves(Polymer& poly)
+    vector<tuple<int, P>> GetPossibleMoves(Polymer<P>& poly)
     {
         int endloc_head = 0; int nextloc_head = 1;
         int endloc_tail = (int)poly.locs.size() - 1; int nextloc_tail = (int)poly.locs.size() - 2;
-        vector<tuple<int, Position>> possible_moves;
+        vector<tuple<int, P>> possible_moves;
         
         for (auto pos : space.Neighbor(poly.locs[nextloc_head]))
-            if (space.space[pos.x][pos.y] == 0)
+            if (space.EmptyPos(pos))
                 possible_moves.push_back(make_tuple(endloc_head, pos));
-
+        
         for (auto pos : space.Neighbor(poly.locs[nextloc_tail]))
-            if (space.space[pos.x][pos.y] == 0)
+            if (space.EmptyPos(pos))
                 possible_moves.push_back(make_tuple(endloc_tail, pos));
         
         return possible_moves;
+    }
+
+    void UpdateReverseCheckingSpace(P& oldpoint, P& newpoint, Polymer<P>& poly)
+    {
+        space.RSpacePointMove(oldpoint, newpoint);
     }
 };
 

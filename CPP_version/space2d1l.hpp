@@ -31,8 +31,8 @@ public:
     int NSim, LSim, NSumo, LSumo;
     size_t Lx, Ly;
     int SimId, SumoId;
-    vector<Polymer> Sims;
-    vector<Polymer> Sumos;
+    vector<Polymer<Pos2d1l>> Sims;
+    vector<Polymer<Pos2d1l>> Sumos;
     vector<vector<int>> space;
     vector<vector<vector<int>>> bond;
     vector<vector<vector<int>>> rspace;
@@ -73,14 +73,19 @@ public:
         }
     }
     
-    vector<Position> Neighbor(Position point)
+    vector<Pos2d1l> Neighbor(Pos2d1l point)
     {
         int x = point.x;
         int y = point.y;
-        return {Position((x+1)%Lx, y), Position((x-1+(int)Lx)%Lx, y), Position(x, (y+1)%Ly), Position(x, (y-1+(int)Ly)%Ly)};
+        return {Pos2d1l((x+1)%Lx, y), Pos2d1l((x-1+(int)Lx)%Lx, y), Pos2d1l(x, (y+1)%Ly), Pos2d1l(x, (y-1+(int)Ly)%Ly)};
     }
     
-    void SafeRemove(Position point)
+    vector<Pos2d1l> BondNeighbor(Pos2d1l point)
+    {
+        return Neighbor(point);
+    }
+    
+    void SafeRemove(Pos2d1l point)
     {
         int x = point.x;
         int y = point.y;
@@ -105,7 +110,7 @@ public:
         }
     }
     
-    void SafeCreate(Position point, int polyvalue)
+    void SafeCreate(Pos2d1l point, int polyvalue)
     {
         int x = point.x;
         int y = point.y;
@@ -113,7 +118,7 @@ public:
         space[x][y] = polyvalue;
     }
     
-    void CreateBond(Position point1, Position point2)
+    void CreateBond(Pos2d1l point1, Pos2d1l point2)
     {
         int x1 = point1.x;
         int y1 = point1.y;
@@ -131,34 +136,34 @@ public:
         space[x2][y2] *= 2;
     }
     
-    bool CanBuildBond(Position point1, Position point2)
+    bool CanBuildBond(Pos2d1l point1, Pos2d1l point2)
     {
         return space[point1.x][point1.y] * space[point2.x][point2.y] == -1;
     }
     
-    bool ExistBond(Position point1, Position point2)
+    bool ExistBond(Pos2d1l point1, Pos2d1l point2)
     {
         return space[point1.x][point1.y] * space[point2.x][point2.y] == -4;
     }
     
-    bool InABond(Position point)
+    bool InABond(Pos2d1l point)
     {
         return abs(space[point.x][point.y]) != 1 && abs(space[point.x][point.y]) != 0;
     }
     
-    bool CanBuildBondTentative(Position bpoint, int sitevalue)
+    bool CanBuildBondTentative(Pos2d1l bpoint, int sitevalue)
     {
         return space[bpoint.x][bpoint.y] * sitevalue == -1;
     }
     
     void DiluteInit(char direction);
     void DenseInit(int rows);
-    void Place(char typ, int id, vector<Position> locs) // i for sim, u for sumo
+    void Place(char typ, int id, vector<Pos2d1l> locs) // i for sim, u for sumo
     {
         int spacetype = (typ == 'i')? 1 : -1;
-        vector<Polymer>& polymers = (typ=='i')? Sims : Sumos;
+        vector<Polymer<Pos2d1l>>& polymers = (typ=='i')? Sims : Sumos;
         
-        Polymer poly(id, locs.size());
+        Polymer<Pos2d1l> poly(id, locs.size());
         poly.locs = locs;
         polymers.push_back(poly);
         
@@ -172,8 +177,31 @@ public:
         }
     }
     
-
+    bool EmptyPos(Pos2d1l& pos)
+    {
+        return space[pos.x][pos.y] == 0;
+    }
     
+    void RSpacePointMove(Pos2d1l& oldpoint, Pos2d1l& newpoint)
+    {
+        int xnew = newpoint.x; int ynew = newpoint.y;
+        int xold = oldpoint.x; int yold = oldpoint.y;
+        
+        assert(rspace[xnew][ynew][0] == 0);
+        rspace[xnew][ynew][0] = rspace[xold][yold][0];
+        rspace[xnew][ynew][1] = rspace[xold][yold][1];
+        rspace[xold][yold][0] = 0;
+        rspace[xnew][ynew][1] = 0;
+    }
+    vector<int> GetRspacePoint(Pos2d1l& point)
+    {
+        return {rspace[point.x][point.y][0], rspace[point.x][point.y][1]};
+    }
+    void SetRspacePoint(Pos2d1l& point, int polyid, int locid)
+    {
+        rspace[point.x][point.y][0] = polyid;
+        rspace[point.x][point.y][1] = locid;
+    }
 };
 
 std::ostream& PrintSpace(std::ostream &out, Space2D1L &space);
