@@ -48,17 +48,17 @@ public:
 
     vector<tuple<int, P>> GetPossibleMoves(Polymer<P>& poly)
     {
-        int endloc_head = 0; int nextloc_head = 1;
-        int endloc_tail = (int)poly.locs.size() - 1; int nextloc_tail = (int)poly.locs.size() - 2;
+        int endloc_head = 0;
+        int endloc_tail = (int)poly.locs.size() - 1;
         vector<tuple<int, P>> possible_moves;
         
-        for (auto pos : space.Neighbor(poly.locs[nextloc_head]))
-            if (space.EmptyPos(pos))
-                possible_moves.push_back(make_tuple(endloc_head, pos));
-        
-        for (auto pos : space.Neighbor(poly.locs[nextloc_tail]))
+        for (auto pos : space.Neighbor(poly.locs[endloc_head]))
             if (space.EmptyPos(pos))
                 possible_moves.push_back(make_tuple(endloc_tail, pos));
+        
+        for (auto pos : space.Neighbor(poly.locs[endloc_tail]))
+            if (space.EmptyPos(pos))
+                possible_moves.push_back(make_tuple(endloc_head, pos));
         
         return possible_moves;
     }

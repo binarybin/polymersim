@@ -44,10 +44,11 @@ template <> vector<tuple<int, Pos2d1l>> CornerMove<Space2D1L, Pos2d1l>::GetPossi
         int x2 = poly.locs[pos+1].x; int y2 = poly.locs[pos+1].y;
         int x3 = poly.locs[pos+2].x; int y3 = poly.locs[pos+2].y;
         
-        cout<<x1<<", "<<y1<<endl<<x2<<", "<<y2<<endl<<x3<<", "<<y3<<endl<<endl;
+        
         
         if (x1 != x3 && y1 != y3)
         {
+      //      cout<<x1<<", "<<y1<<endl<<x2<<", "<<y2<<endl<<x3<<", "<<y3<<endl<<endl;
             if (x1 == x2)
             {
                 assert(y1 != y2 && y2 == y3 && x2 != x3);
