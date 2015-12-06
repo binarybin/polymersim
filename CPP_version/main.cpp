@@ -25,7 +25,7 @@ int main(int argc, const char * argv[])
     
     size_t nbr_run = 100000;
     
-    App<Space2D1L, Pos2d1l> app(nsim, nsumo, lsim, lsumo, lx, ly);
+    App<Space2D2L, Pos2d2l> app(nsim, nsumo, lsim, lsumo, lx, ly);
     app.Initialize();
     for (int i = 0; i < nbr_run; i++)
     {

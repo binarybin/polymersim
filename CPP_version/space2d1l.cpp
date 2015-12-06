@@ -8,8 +8,6 @@
 #include <sstream>
 #include "space2d1l.hpp"
 
-
-
 std::ostream& PrintSpace(std::ostream &out, Space2D1L &space)
 {
     out<<"Two dimensional single layer space"<<endl;
