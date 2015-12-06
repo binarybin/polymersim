@@ -19,6 +19,7 @@
 #include <fstream>
 #include <iomanip>
 #include <utility>
+#include <string>
 #include "position.h"
 using std::vector;
 using std::max;
@@ -27,6 +28,7 @@ using std::cout;
 using std::endl;
 using std::invalid_argument;
 using std::pair;
+using std::string;
 
 class Space2D2L
 {
@@ -43,8 +45,24 @@ public:
     NSim(nsim), NSumo(nsumo), LSim(lsim), LSumo(lsumo), Lx(lx), Ly(ly),
     SimId(0), SumoId(0),
     space(2, vector<vector<int>>(lx, vector<int>(ly))),
-    rspace(2, vector<vector<vector<int>>>(lx, vector<vector<int>>(ly, vector<int>(2))))
+    rspace(2, vector<vector<vector<int>>>(lx, vector<vector<int>>(ly, vector<int>(2, NOBOND))))
     {}
+    
+    void Resume(vector<vector<string>>& spaceanal, vector<vector<string>>& polyanal, vector<vector<string>>& bondanal)
+    {
+        cout<<"Resuming from file"<<endl;
+        ResumeBasicInfo(spaceanal, polyanal);
+        ResumeSpace(spaceanal, polyanal);
+        ResumePolymer(spaceanal, polyanal);
+        ResumeBond(bondanal);
+        ResumeReverse();
+        cout<<"Finished resuming"<<endl;
+    }
+    void ResumeBasicInfo(vector<vector<string>>& spaceanal, vector<vector<string>>& polyanal);
+    void ResumeSpace(vector<vector<string>>& spaceanal, vector<vector<string>>& polyanal);
+    void ResumePolymer(vector<vector<string>>& spaceanal, vector<vector<string>>& polyanal);
+    void ResumeBond(vector<vector<string>>& bondanal);
+    void ResumeReverse();
     
     void Initialize()
     {
@@ -92,13 +110,13 @@ public:
         int y = point.y;
         int layer = point.siml? 0:1;
         assert(space[layer][x][y] != 0);
-        space[layer][x][y] = 0;
         
         if (abs(space[layer][x][y])!= 1) // we have a bond to remove, so remove it
         {
             assert(abs(space[1-layer][x][y])==2); // assert bond consistency
             space[1-layer][x][y] = [](int &x) {return (x>0) - (x<0);}(space[1-layer][x][y]);
         }
+        space[layer][x][y] = 0;
     }
     
     void SafeCreate(Pos2d2l point, int polyvalue)
@@ -179,11 +197,15 @@ public:
         int xold = oldpoint.x; int yold = oldpoint.y; int layerold = newpoint.siml? 0:1;
         
         assert(layernew == layerold);
-        assert(rspace[layernew][xnew][ynew][0] == 0);
+        assert(rspace[layernew][xnew][ynew][0] == NOBOND);
         rspace[layernew][xnew][ynew][0] = rspace[layernew][xold][yold][0];
         rspace[layernew][xnew][ynew][1] = rspace[layernew][xold][yold][1];
-        rspace[layernew][xold][yold][0] = 0;
-        rspace[layernew][xnew][ynew][1] = 0;
+        rspace[layernew][xold][yold][0] = NOBOND;
+        rspace[layernew][xnew][ynew][1] = NOBOND;
+    }
+    int GetSpacePoint(Pos2d2l& point)
+    {
+        return space[point.siml?0:1][point.x][point.y];
     }
     vector<int> GetRspacePoint(Pos2d2l& point)
     {
@@ -194,6 +216,12 @@ public:
         rspace[point.siml? 0:1][point.x][point.y][0] = polyid;
         rspace[point.siml? 0:1][point.x][point.y][1] = locid;
     }
+    
+    void SetSpacePoint(Pos2d2l& point, int val)
+    {
+        space[point.siml?0:1][point.x][point.y];
+    }
+
 };
 
 std::ostream& PrintSpace(std::ostream &out, Space2D2L &space);

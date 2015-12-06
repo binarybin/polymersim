@@ -17,6 +17,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <string>
 #include "position.h"
 using std::vector;
 using std::max;
@@ -24,6 +25,7 @@ using std::remove_if;
 using std::cout;
 using std::endl;
 using std::invalid_argument;
+using std::string;
 
 class Space2D1L
 {
@@ -43,8 +45,23 @@ public:
     SimId(0), SumoId(0),
         space(lx, vector<int>(ly)),
         bond(lx, vector<vector<int>>(ly, vector<int>(2, NOBOND))),
-        rspace(lx, vector<vector<int>>(ly, vector<int>(2)))
+        rspace(lx, vector<vector<int>>(ly, vector<int>(2, NOBOND)))
     {}
+    void Resume(vector<vector<string>>& spaceanal, vector<vector<string>>& polyanal, vector<vector<string>>& bondanal)
+    {
+        cout<<"Resuming from file"<<endl;
+        ResumeBasicInfo(spaceanal, polyanal);
+        ResumeSpace(spaceanal, polyanal);
+        ResumePolymer(spaceanal, polyanal);
+        ResumeBond(bondanal);
+        ResumeReverse();
+        cout<<"Finished resuming"<<endl;
+    }
+    void ResumeBasicInfo(vector<vector<string>>& spaceanal, vector<vector<string>>& polyanal);
+    void ResumeSpace(vector<vector<string>>& spaceanal, vector<vector<string>>& polyanal);
+    void ResumePolymer(vector<vector<string>>& spaceanal, vector<vector<string>>& polyanal);
+    void ResumeBond(vector<vector<string>>& bondanal);
+    void ResumeReverse();
     
     void Initialize()
     {
@@ -187,21 +204,30 @@ public:
         int xnew = newpoint.x; int ynew = newpoint.y;
         int xold = oldpoint.x; int yold = oldpoint.y;
         
-        assert(rspace[xnew][ynew][0] == 0);
+        assert(rspace[xnew][ynew][0] == NOBOND);
         rspace[xnew][ynew][0] = rspace[xold][yold][0];
         rspace[xnew][ynew][1] = rspace[xold][yold][1];
-        rspace[xold][yold][0] = 0;
-        rspace[xnew][ynew][1] = 0;
+        rspace[xold][yold][0] = NOBOND;
+        rspace[xnew][ynew][1] = NOBOND;
     }
     vector<int> GetRspacePoint(Pos2d1l& point)
     {
         return {rspace[point.x][point.y][0], rspace[point.x][point.y][1]};
+    }
+    int GetSpacePoint(Pos2d1l& point)
+    {
+        return space[point.x][point.y];
+    }
+    void SetSpacePoint(Pos2d1l& point, int val)
+    {
+        space[point.x][point.y] = val;
     }
     void SetRspacePoint(Pos2d1l& point, int polyid, int locid)
     {
         rspace[point.x][point.y][0] = polyid;
         rspace[point.x][point.y][1] = locid;
     }
+
 };
 
 std::ostream& PrintSpace(std::ostream &out, Space2D1L &space);

@@ -25,11 +25,11 @@ using std::tie;
 
 template <class S, class P, class M> class Move
 {
-public:
+private:
     S& space;
     M move;
     double beta;
-
+public:
     Move(S &thespace): move(thespace), space(thespace), beta(0){}
     
     tuple<bool, int> ExecMove(int polyid, char polytyp);
@@ -83,6 +83,7 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
     
     if ((double)rand()/(RAND_MAX) < Weight(nbr_bond_inc))
     {
+        assert(!space.EmptyPos(oldpoint));
         space.SafeRemove(oldpoint);
         space.SafeCreate(newpoint, sitevalue);
         move.UpdatePolymer(poly, pointid, newpoint);

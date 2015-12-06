@@ -21,6 +21,10 @@ public:
     int x, y;
     Pos2d1l(int input_x, int input_y): x(input_x), y(input_y) {}
     Pos2d1l(): x(0), y(0) {}
+    bool IsNeighborOf(Pos2d1l& other)
+    {
+        return (x == other.x) != (y == other.y);
+    }
 };
 
 class Pos2d2l
@@ -30,6 +34,10 @@ public:
     bool siml; // in the sim layer
     Pos2d2l(int input_x, int input_y, bool input_layer): x(input_x), y(input_y), siml(input_layer) {}
     Pos2d2l(): x(0), y(0), siml(true){}
+    bool IsNeighborOf(Pos2d2l& other)
+    {
+        return (siml == other.siml) && (x == other.x) != (y == other.y);
+    }
 };
 
 class Pos3d1l

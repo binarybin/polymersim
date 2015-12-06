@@ -19,8 +19,9 @@ using std::make_tuple;
 template <class S, class P>
 class SnakeMove
 {
-public:
+private:
     S& space;
+public:
     SnakeMove(S& thespace): space(thespace) {}
     void UpdatePolymer(Polymer<P>& poly, int pointid, P& newpoint)
     {
@@ -38,10 +39,10 @@ public:
     
     void UpdateReverseCheckingSpace(P& oldpoint, P& newpoint, Polymer<P>& poly)
     {
-        assert(space.GetRspacePoint(newpoint)[0] == 0);
+        assert(space.GetRspacePoint(newpoint)[0] == NOBOND);
         
         int polyid = space.GetRspacePoint(oldpoint)[0];
-        space.SetRspacePoint(oldpoint, 0, 0);
+        space.SetRspacePoint(oldpoint, NOBOND, NOBOND);
         for (int i = 0; i < poly.locs.size(); i++)
             space.SetRspacePoint(poly.locs[i], polyid, i);
     }

@@ -17,8 +17,9 @@ using std::make_tuple;
 
 template <class S, class P> class EndMove
 {
-public:
+private:
     S& space;
+public:
     EndMove(S& thespace) : space(thespace) {}
     
     void UpdatePolymer(Polymer<P>& poly, int pointid, P& newpoint)
