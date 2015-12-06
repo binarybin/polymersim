@@ -10,6 +10,8 @@
 #define endmove_hpp
 #include <tuple>
 #include <vector>
+#include "space2d1l.hpp"
+#include "space2d2l.cpp"
 
 using std::tuple;
 using std::vector;

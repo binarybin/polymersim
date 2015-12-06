@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <tuple>
 #include "space2d1l.hpp"
+#include "space2d2l.cpp"
 #include "endmove.hpp"
 #include "snakemove.hpp"
 #include "cornermove.hpp"
