@@ -25,7 +25,7 @@ int main(int argc, const char * argv[])
     
     size_t nbr_run = 100000;
     
-    App<Space2D2L, Pos2d2l> app(nsim, nsumo, lsim, lsumo, lx, ly);
+    App<Space2D1L, Pos2d1l> app(nsim, nsumo, lsim, lsumo, lx, ly);
     app.Initialize();
     for (int i = 0; i < nbr_run; i++)
     {
@@ -46,13 +46,25 @@ int main(int argc, const char * argv[])
     app.ShowPolymer(std::cout);
     app.ShowSpace(std::cout);
     
-    ofstream out("/Users/binxu/Desktop/testout.txt");
+    ofstream out("testout.txt");
     app.Dump(out);
     out.close();
     
-    ifstream in("/Users/binxu/Desktop/testout.txt");
+/*    ifstream in("/Users/binxu/Desktop/testout.txt");
     app.Resume(in);
-    in.close();
+    in.close();*/
+    
+/*    for (int i = 0; i < nbr_run; i++)
+    {
+        app.Proceed('s');
+        app.Proceed('e');
+        app.Proceed('c');
+    }*/
+    
+    app.TestPolymerAndSpace();
+    app.TestPolymerConnection();
+    app.TestReverseSpace();
+    app.TestSpaceAndBond();
     
     return 0;
 }

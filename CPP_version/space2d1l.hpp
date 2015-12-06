@@ -204,11 +204,11 @@ public:
         int xnew = newpoint.x; int ynew = newpoint.y;
         int xold = oldpoint.x; int yold = oldpoint.y;
         
-        assert(rspace[xnew][ynew][0] == NOBOND);
+        assert(rspace[xnew][ynew][0] == NOBOND && rspace[xnew][ynew][1] == NOBOND);
         rspace[xnew][ynew][0] = rspace[xold][yold][0];
         rspace[xnew][ynew][1] = rspace[xold][yold][1];
         rspace[xold][yold][0] = NOBOND;
-        rspace[xnew][ynew][1] = NOBOND;
+        rspace[xold][yold][1] = NOBOND;
     }
     vector<int> GetRspacePoint(Pos2d1l& point)
     {

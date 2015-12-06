@@ -197,11 +197,11 @@ public:
         int xold = oldpoint.x; int yold = oldpoint.y; int layerold = newpoint.siml? 0:1;
         
         assert(layernew == layerold);
-        assert(rspace[layernew][xnew][ynew][0] == NOBOND);
+        assert(rspace[layernew][xnew][ynew][0] == NOBOND && rspace[layernew][xnew][ynew][1] == NOBOND);
         rspace[layernew][xnew][ynew][0] = rspace[layernew][xold][yold][0];
         rspace[layernew][xnew][ynew][1] = rspace[layernew][xold][yold][1];
         rspace[layernew][xold][yold][0] = NOBOND;
-        rspace[layernew][xnew][ynew][1] = NOBOND;
+        rspace[layernew][xold][yold][1] = NOBOND;
     }
     int GetSpacePoint(Pos2d2l& point)
     {
