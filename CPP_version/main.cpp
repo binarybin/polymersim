@@ -23,25 +23,38 @@ int main(int argc, const char * argv[])
     size_t lx = 100;
     size_t ly = 100;
     
-    size_t nbr_run = 100000;
+    size_t nbr_run = 10000000;
     
     App<Space2D2L, Pos2d2l> app(nsim, nsumo, lsim, lsumo, lx, ly);
     app.Initialize();
-    for (int i = 0; i < nbr_run; i++)
+    double beta = 0.1;
+    ofstream r_out("runningdata.txt");
+    r_out<<"beta\t"<<"S_succ\t"<<"E_succ\t"<<"C_succ\t"<<"energy"<<endl;
+    for (int i = 0; i < 100; i++)
     {
-        app.Proceed('s');
-        app.Proceed('e');
-        app.Proceed('c');
+        for (int j = 1; j <= nbr_run/100; j++)
+        {
+            app.Proceed('s');
+            app.Proceed('e');
+            app.Proceed('c');
+            if (j % 10000 == 0)
+            {
+                r_out<<beta<<"\t";
+                r_out<<app.ResetMoveSucc('s')<<"\t";
+                r_out<<app.ResetMoveSucc('e')<<"\t";
+                r_out<<app.ResetMoveSucc('c')<<"\t";
+                r_out<<app.GetEnergy()<<endl;
+            }
+        }
+        beta *= 1.05;
+        app.SetBeta(beta);
+        cout<<i+1<<" percent finished"<<endl;
+        std::string filename = std::string("testout") + std::to_string(i+1) + std::string("pct.txt");
+        ofstream out(filename);
+        app.Dump(out);
+        out.close();
     }
-    
-    app.SetBeta(10);
-    
-    for (int i = 0; i < nbr_run; i++)
-    {
-        app.Proceed('s');
-        app.Proceed('e');
-        app.Proceed('c');
-    }
+    r_out.close();
     
     app.ShowPolymer(std::cout);
     app.ShowSpace(std::cout);
