@@ -415,7 +415,7 @@ template <class S, class P>
 void App<S,P>::Proceed(char typ)
 {
     char typ_r = (double)rand()/((double)RAND_MAX+1) > 0.5 ? 'i' : 'u';
-    char id_r = ((double)rand()/((double)RAND_MAX+1) * (typ_r == 'i' ? test_tube.NSim : test_tube.NSumo));
+    int id_r = ((double)rand()/((double)RAND_MAX+1) * (typ_r == 'i' ? test_tube.NSim : test_tube.NSumo));
     switch (typ)
     {
         case 's':

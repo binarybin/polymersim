@@ -6,79 +6,36 @@
 //  Copyright © 2015 Bin Xu. All rights reserved.
 //
 
-#include <iostream>
-#include <fstream>
-#include <ctime>
-#include "app.hpp"
-
-using std::ofstream;
-using std::ifstream;
+#include <map>
+#include "simanneal.hpp"
+using std::stoi;
 
 int main(int argc, const char * argv[])
 {
-    int nsim = 25;
-    int nsumo = 25;
-    int lsim = 10;
-    int lsumo = 10;
-    size_t lx = 100;
-    size_t ly = 100;
+    cout<<"argc: "<<argc<<endl;
+    int nsim = stoi(argv[1]);
+    int nsumo = stoi(argv[2]);
+    int lsim = stoi(argv[3]);
+    int lsumo = stoi(argv[4]);
+    size_t lx = stoi(argv[5]);
+    size_t ly = stoi(argv[6]);
     
-    size_t nbr_run = 10000000;
+    size_t nbr_run = stoi(argv[7]);
     
-    App<Space2D2L, Pos2d2l> app(nsim, nsumo, lsim, lsumo, lx, ly);
-    app.Initialize();
-    double beta = 0.1;
-    ofstream r_out("runningdata.txt");
-    r_out<<"beta\t"<<"S_succ\t"<<"E_succ\t"<<"C_succ\t"<<"energy"<<endl;
-    for (int i = 0; i < 100; i++)
+    string signature = argv[8];
+    
+    SimAnnealing<Space2D1L, Pos2d1l> process(nsim, nsumo, lsim, lsumo, lx, ly, "test");
+    
+    if (argv[9][0] == 'r')
     {
-        for (int j = 1; j <= nbr_run/100; j++)
-        {
-            app.Proceed('s');
-            app.Proceed('e');
-            app.Proceed('c');
-            if (j % 10000 == 0)
-            {
-                r_out<<beta<<"\t";
-                r_out<<app.ResetMoveSucc('s')<<"\t";
-                r_out<<app.ResetMoveSucc('e')<<"\t";
-                r_out<<app.ResetMoveSucc('c')<<"\t";
-                r_out<<app.GetEnergy()<<endl;
-            }
-        }
-        beta *= 1.05;
-        app.SetBeta(beta);
-        cout<<i+1<<" percent finished"<<endl;
-        std::string filename = std::string("testout") + std::to_string(i+1) + std::string("pct.txt");
-        ofstream out(filename);
-        app.Dump(out);
-        out.close();
+        int pct = stoi(argv[10]);
+        string beta = argv[11];
+        process.Resume(pct, beta, nbr_run);
     }
-    r_out.close();
-    
-    app.ShowPolymer(std::cout);
-    app.ShowSpace(std::cout);
-    
-    ofstream out("testout.txt");
-    app.Dump(out);
-    out.close();
-    
-/*    ifstream in("/Users/binxu/Desktop/testout.txt");
-    app.Resume(in);
-    in.close();*/
-    
-/*    for (int i = 0; i < nbr_run; i++)
+    else
     {
-        app.Proceed('s');
-        app.Proceed('e');
-        app.Proceed('c');
-    }*/
-    
-    app.TestPolymerAndSpace();
-    app.TestPolymerConnection();
-    app.TestReverseSpace();
-    app.TestSpaceAndBond();
-    
+        process.Run(nbr_run);
+    }
     return 0;
 }
 

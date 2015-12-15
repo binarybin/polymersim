@@ -37,7 +37,7 @@ class App(object):
             self.move(one_move)
     def animate(self, i):
         tempspace = copy(self.space.space)
-        plt.imshow(tempspace)
+        plt.imshow(tempspace, clim=(-2, 2))
         print i
         self.proceed()
         if i == 30:
@@ -48,6 +48,9 @@ class App(object):
 if __name__=='__main__':
     app = App(10, 10, 10, 20, 40, 30)
     fig = plt.figure()
-    ani = animation.FuncAnimation(fig, app.animate, interval=0, frames=5000, repeat=False) 
-    plt.show()
+    #ani = animation.FuncAnimation(fig, app.animate, interval=1, frames=1000, repeat=False)
+    #plt.show()
     #ani.save('movie5000.mp4', writer='ffmpeg', fps = 10)
+    for i in range(100):
+        app.animate(i)
+        plt.savefig("fig"+str(i)+".png")

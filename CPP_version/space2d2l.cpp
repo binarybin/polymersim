@@ -8,7 +8,6 @@
 #include <sstream>
 #include "space2d2l.hpp"
 
-
 std::ostream& PrintSpace(std::ostream &out, Space2D2L &space)
 {
     out<<"Two dimensional single layer space"<<endl;
@@ -305,3 +304,4 @@ void Space2D2L::ResumeReverse()
     }
 }
 
+const string Space2D2L::name = "2d2l";

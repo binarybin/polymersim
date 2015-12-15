@@ -322,3 +322,5 @@ void Space2D1L::DenseInit(int rows)
         }
     }
 }
+
+const string Space2D1L::name = "2d1l";

@@ -30,6 +30,7 @@ using std::string;
 class Space2D1L
 {
 public:
+    static const string name;
     int NSim, LSim, NSumo, LSumo;
     size_t Lx, Ly;
     int SimId, SumoId;
