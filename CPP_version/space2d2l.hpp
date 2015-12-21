@@ -79,16 +79,29 @@ public:
         }
         else
         {
-            int rows_min = ceil((NSim + NSumo)/Lx);
-            int rows_max = floor(Ly / max(LSim, LSumo));
-            int rows = -1;
+            int rows_min_sim = ceil((double)NSim/Lx); // We need so many rows, otherwise it overflows in x direction
+            int rows_max_sim = (int)Ly/LSim; // We cannot fill more than this many columns, otherwise it overflows in y direction
+            int rows_sim = -1; // Initialize
+            cout<<"min rows sim: "<<rows_min_sim<<"\t max rows sim: "<<rows_max_sim<<endl;
+            if (rows_max_sim < rows_min_sim) // No valid range
+            {
+                throw invalid_argument("Dense Initialization failed for Sim, maybe too dense");
+            }
+            else // Take an intermediate number
+                rows_sim = sqrt(rows_max_sim * rows_min_sim);
+            cout << "Used dense initialization with " << rows_sim << " rows for Sim" << endl;
+            DenseInit(rows_sim, 'i');
             
-            if (rows_max < rows_min)
-                throw invalid_argument("Dense Initialization failed, maybe too dense");
+            
+            int rows_min_sumo = ceil((double)NSumo/Lx);
+            int rows_max_sumo = Ly / LSumo;
+            int rows_sumo = -1;
+            if (rows_max_sumo < rows_min_sumo)
+                throw invalid_argument("Dense Initialization failed for Sumo, maybe too dense");
             else
-                rows = floor(sqrt(rows_max * rows_min));
-            cout << "Used dense initialization with " << rows << " rows" << endl;
-            DenseInit(rows);
+                rows_sumo = sqrt(rows_max_sumo * rows_min_sumo);
+            cout << "Used dense initialization with " << rows_sumo << " rows for Sumo" << endl;
+            DenseInit(rows_sumo, 'u');
         }
     }
     
@@ -166,7 +179,7 @@ public:
     }
     
     void DiluteInit(char direction);
-    void DenseInit(int rows);
+    void DenseInit(int rows, char typ);
     void Place(char typ, int id, vector<Pos2d2l> locs) // i for sim, u for sumo
     {
         int spacetype = (typ == 'i')? 1 : -1;

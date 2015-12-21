@@ -110,81 +110,50 @@ void Space2D2L::DiluteInit(char direction)
         throw std::invalid_argument("");
 }
 
-void Space2D2L::DenseInit(int rows)
+void Space2D2L::DenseInit(int rows, char typ)
 {
-    if (LSim * rows > Ly || LSumo * rows > Ly)
-    {
-        throw std::invalid_argument("Too many rows to initialize polymers.");
-    }
+    int Length = (typ == 'i' ? LSim : LSumo);
     
-    int lines_sim = ceil((float)NSim/rows);
-    int lines_sumo = ceil((float)NSumo/rows);
-    
-    int dx = (int) Lx / max(lines_sim, lines_sumo);
+    int lines = (typ == 'i' ? ceil((float)NSim/rows) : ceil((float)NSumo/rows));
+    int dx = (int) Lx / lines;
     cout << "Dense initialization: dx = "<<dx<<endl;
-    cout << "dx = " << Lx << " /("<<lines_sim<<" + "<<lines_sumo<<" )"<<endl;
+    cout << "dx = " << Lx << " /"<<lines<<endl;
     if(dx==0)
         throw std::invalid_argument("Just a little bit too dense. This can be settled but the current implementation does not support");
-    int dy = (int) Ly/rows;
-    int count_sim = 0;
     
-    for (int xidx = 0; xidx < lines_sim; xidx++)
+    int dy = (int) Ly/rows;
+    if (dy < Length)
+        throw std::invalid_argument("Too many rows to initialize polymers.");
+    
+    int count = 0;
+    int N = (typ == 'i' ? NSim : NSumo);
+    
+    for (int xidx = 0; xidx < lines; xidx++)
     {
-        if (count_sim >= NSim)
+        if (count >= N)
             break;
         
         int x = xidx*dx;
         
         for (int yidx = 0; yidx < rows; yidx++)
         {
-            if (count_sim >= NSim)
+            if (count >= N)
                 break;
             int y = yidx*dy;
             
-            cout<<"Initializing SIM "<<count_sim<<" row "<<x<<" column "<<y<<endl;
+            cout<<"Initializing "<< (typ == 'i' ? "SIM " : "SUMO ")<<count<<" row "<<x<<" column "<<y<<endl;
             
             
             vector<Pos2d2l> locs(LSim);
             for (int l = 0; l < LSim; l++)
             {
-                locs[l].siml = true;
+                locs[l].siml = (typ=='i');
                 locs[l].x = x;
                 locs[l].y = y+l;
             }
             
-            this->Place('i', count_sim, locs);
-            count_sim += 1;
-        }
-    }
-    
-    int count_sumo = 0;
-    
-    for (int xidx = 0; xidx < lines_sumo; xidx++)
-    {
-        if (count_sumo >= NSumo)
-            break;
-        
-        int x = xidx*dx;
-        
-        for (int yidx = 0; yidx < rows; yidx++)
-        {
-            if (count_sumo >= NSumo)
-                break;
-            int y = yidx*dy;
-            
-            cout<<"Initializing SUMO "<<count_sumo<<" row "<<x<<" column "<<y<<endl;
-            
-            
-            vector<Pos2d2l> locs(LSumo);
-            for (int l = 0; l < LSumo; l++)
-            {
-                locs[l].siml = false;
-                locs[l].x = x;
-                locs[l].y = y+l;
-            }
-            
-            this->Place('u', count_sumo, locs);
-            count_sumo += 1;
+            Place(typ, count, locs);
+            count += 1;
         }
     }
 }
