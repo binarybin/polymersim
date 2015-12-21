@@ -15,6 +15,7 @@
 #include <tuple>
 #include <string>
 #include <stdexcept>
+#include <random>
 #include "space2d1l.hpp"
 #include "space2d2l.hpp"
 #include "move.hpp"
@@ -24,6 +25,11 @@ using std::tuple;
 using std::string;
 using std::istringstream;
 using std::runtime_error;
+using std::random_device;
+using std::mt19937;
+using std::uniform_int_distribution;
+using std::generate_canonical;
+
 
 template <class S, class P>
 class App
@@ -32,11 +38,13 @@ class App
     Move<S, P, SnakeMove<S, P>> sm;
     Move<S, P, CornerMove<S, P>> cm;
     Move<S, P, EndMove<S, P>> em;
+    random_device rd;
+    mt19937 gen;
 public:
     App(int nsim, int nsumo, int lsim, int lsumo, size_t lx, size_t ly):
-        test_tube(nsim, nsumo, lsim, lsumo, lx, ly), sm(test_tube), cm(test_tube), em(test_tube) {}
+        test_tube(nsim, nsumo, lsim, lsumo, lx, ly), sm(test_tube), cm(test_tube), em(test_tube),gen(rd()) {}
     App(int nsim, int nsumo, int lsim, int lsumo, size_t lx, size_t ly, size_t lz):
-        test_tube(nsim, nsumo, lsim, lsumo, lx, ly, lz), sm(test_tube), cm(test_tube), em(test_tube) {}
+        test_tube(nsim, nsumo, lsim, lsumo, lx, ly, lz), sm(test_tube), cm(test_tube), em(test_tube),gen(rd()) {}
     void Initialize() {test_tube.Initialize();}
     
     void Proceed(char typ);
@@ -414,8 +422,10 @@ void App<S,P>::TestPolymerConnection()
 template <class S, class P>
 void App<S,P>::Proceed(char typ)
 {
-    char typ_r = (double)rand()/((double)RAND_MAX+1) > 0.5 ? 'i' : 'u';
-    int id_r = ((double)rand()/((double)RAND_MAX+1) * (typ_r == 'i' ? test_tube.NSim : test_tube.NSumo));
+    char typ_r = generate_canonical<double, 3>(gen) >= 0.5 ? 'i' : 'u';
+    int NPoly = (typ_r == 'i' ? test_tube.NSim : test_tube.NSumo);
+    uniform_int_distribution<> dis(0, NPoly-1);
+    int id_r = dis(gen);
     switch (typ)
     {
         case 's':

@@ -24,7 +24,7 @@ int main(int argc, const char * argv[])
     
     string signature = argv[8];
     
-    SimAnnealing<Space2D1L, Pos2d1l> process(nsim, nsumo, lsim, lsumo, lx, ly, "test");
+    SimAnnealing<Space2D2L, Pos2d2l> process(nsim, nsumo, lsim, lsumo, lx, ly, signature);
     
     if (argv[9][0] == 'r')
     {

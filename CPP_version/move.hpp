@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <stdexcept>
 #include <tuple>
+#include <random>
 #include "space2d1l.hpp"
 #include "space2d1l.hpp"
 #include "endmove.hpp"
@@ -22,7 +23,10 @@ using std::invalid_argument;
 using std::tuple;
 using std::make_tuple;
 using std::tie;
-
+using std::random_device;
+using std::mt19937;
+using std::uniform_int_distribution;
+using std::generate_canonical;
 
 template <class S, class P, class M> class Move
 {
@@ -32,9 +36,13 @@ private:
     double beta;
     
     int succ;
+    
+    random_device rd;
+    mt19937 gen;
+    
 public:
     int bond_change;
-    Move(S &thespace): move(thespace), space(thespace), beta(0), bond_change(0), succ(0){}
+    Move(S &thespace): move(thespace), space(thespace), beta(0), bond_change(0), succ(0), gen(rd()){}
     
     void ClearSucc(){succ=0;}
     int GetSucc(){return succ;}
@@ -44,16 +52,16 @@ public:
     
     P ChooseBond(vector<P> bond_choice)
     {
-        double ran = (double)rand()/((double)RAND_MAX+1);
-        size_t id = floor(ran * bond_choice.size());
+        uniform_int_distribution<> dis(0, (int)bond_choice.size()-1);
+        size_t id = dis(gen);
         assert(id >= 0 && id < bond_choice.size());
         return bond_choice[id];
     }
     
     tuple<int, P> ChooseMove(vector<tuple<int, P>> possible_moves)
     {
-        double ran = (double)rand()/((double)RAND_MAX+1);
-        size_t id = floor(ran * possible_moves.size());
+        uniform_int_distribution<> dis(0, (int)possible_moves.size()-1);
+        size_t id = dis(gen);
         assert(id >= 0 && id < possible_moves.size());
         return possible_moves[id];
     }
@@ -88,7 +96,9 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
     
     if (!bond_choice.empty()) nbr_bond_inc += 1;
     
-    if ((double)rand()/((double)RAND_MAX+1) < Weight(nbr_bond_inc))
+    
+    
+    if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc))
     {
         assert(!space.EmptyPos(oldpoint));
         space.SafeRemove(oldpoint);
