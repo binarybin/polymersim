@@ -10,13 +10,44 @@
 
 std::ostream& PrintSpace(std::ostream &out, Space2D2L &space)
 {
-    out<<"Two dimensional single layer space"<<endl;
+    out<<"Two dimensional double layer space"<<endl;
     out<<"Site occupation configuration: "<<endl;
     for (int i = 0; i < space.Lx; i++)
     {
         for (int j = 0; j < space.Ly; j++)
         {
             out<<space.space[0][i][j]<<","<<space.space[1][i][j]<<'\t';
+        }
+        out<<endl;
+    }
+    out<<"END"<<endl;
+    return out;
+}
+
+std::ostream& PrintRSpace(std::ostream &out, Space2D2L &space)
+{
+    out<<"Two dimensional double layer space"<<endl;
+    out<<"Reverse space configuration: "<<endl;
+    for (int i = 0; i < space.Lx; i++)
+    {
+        for (int j = 0; j < space.Ly; j++)
+        {
+            if (space.rspace[0][i][j][0] < 0)
+                out<<"*,";
+            else
+                out<<space.rspace[0][i][j][0]<<",";
+            if (space.rspace[0][i][j][1] < 0)
+                out<<"*--";
+            else
+                out<<space.rspace[0][i][j][1]<<"--";
+            if (space.rspace[1][i][j][0] < 0)
+                out<<"*,";
+            else
+                out<<space.rspace[1][i][j][0]<<",";
+            if (space.rspace[1][i][j][1] < 0)
+                out<<"*\t";
+            else
+                out<<space.rspace[1][i][j][1]<<"\t";
         }
         out<<endl;
     }
@@ -44,6 +75,8 @@ std::ostream& PrintPolymer(std::ostream &out, Space2D2L &space)
     out<<"END"<<endl;
     return out;
 }
+
+
 std::ostream& PrintBond(std::ostream &out, Space2D2L &space)
 {
     out<<"No bond info for this geometry"<<endl;

@@ -2,7 +2,7 @@
 //  app.hpp
 //  polymersim
 //
-//  Created by Farzan Beroz on 11/18/15.
+//  Created by Farzan Beroz (Who is that?) on 11/18/15.
 //  Copyright © 2015 Bin Xu. All rights reserved.
 //
 
@@ -19,6 +19,7 @@
 #include "space2d1l.hpp"
 #include "space2d2l.hpp"
 #include "move.hpp"
+
 
 using std::make_tuple;
 using std::tuple;
@@ -38,13 +39,25 @@ class App
     Move<S, P, SnakeMove<S, P>> sm;
     Move<S, P, CornerMove<S, P>> cm;
     Move<S, P, EndMove<S, P>> em;
+    Move<S, P, SnakeMove<S, P>> csm;
+    Move<S, P, CornerMove<S, P>> ccm;
+    Move<S, P, EndMove<S, P>> cem;
     random_device rd;
     mt19937 gen;
+    int original_nbr_bond;
 public:
     App(int nsim, int nsumo, int lsim, int lsumo, size_t lx, size_t ly):
-        test_tube(nsim, nsumo, lsim, lsumo, lx, ly), sm(test_tube), cm(test_tube), em(test_tube),gen(rd()) {}
+        test_tube(nsim, nsumo, lsim, lsumo, lx, ly),
+        sm(test_tube), cm(test_tube), em(test_tube),
+        csm(test_tube), ccm(test_tube), cem(test_tube),
+        gen(rd()), original_nbr_bond(0) {}
+    
     App(int nsim, int nsumo, int lsim, int lsumo, size_t lx, size_t ly, size_t lz):
-        test_tube(nsim, nsumo, lsim, lsumo, lx, ly, lz), sm(test_tube), cm(test_tube), em(test_tube),gen(rd()) {}
+        test_tube(nsim, nsumo, lsim, lsumo, lx, ly, lz),
+        sm(test_tube), cm(test_tube), em(test_tube),
+        csm(test_tube), ccm(test_tube), cem(test_tube),
+        gen(rd()), original_nbr_bond(0) {}
+    
     void Initialize() {test_tube.Initialize();}
     
     void Proceed(char typ);
@@ -68,13 +81,28 @@ public:
                 cm.ClearSucc();
                 break;
                 
+            case 'S':
+                returnvalue = csm.GetSucc();
+                csm.ClearSucc();
+                break;
+                
+            case 'E':
+                returnvalue = cem.GetSucc();
+                cem.ClearSucc();
+                break;
+                
+            case 'C':
+                returnvalue = ccm.GetSucc();
+                ccm.ClearSucc();
+                break;
+                
             default:
                 break;
         }
         return returnvalue;
     }
     
-    double GetEnergy(){return -(sm.bond_change + em.bond_change + cm.bond_change);}
+    double GetEnergy(){return -(original_nbr_bond + sm.bond_change + em.bond_change + cm.bond_change + csm.bond_change + ccm.bond_change + cem.bond_change);}
     void ShowSpace(std::ostream &out) {PrintSpace(out, test_tube); }
     void ShowBond(std::ostream &out) {PrintBond(out, test_tube); }
     void ShowPolymer(std::ostream &out) {PrintPolymer(out, test_tube); }
@@ -84,7 +112,21 @@ public:
         sm.SetBeta(beta);
         cm.SetBeta(beta);
         em.SetBeta(beta);
+        csm.SetBeta(beta);
+        ccm.SetBeta(beta);
+        cem.SetBeta(beta);
     }
+    
+    void SetGamma(double gamma)
+    {
+        sm.SetGamma(gamma);
+        cm.SetGamma(gamma);
+        em.SetGamma(gamma);
+        csm.SetGamma(gamma);
+        ccm.SetGamma(gamma);
+        cem.SetGamma(gamma);
+    }
+    
     void Dump(std::ostream &out)
     {
         std::cout<<"Dumping current result to file"<<endl;
@@ -424,6 +466,7 @@ void App<S,P>::Proceed(char typ)
 {
     char typ_r = generate_canonical<double, 3>(gen) >= 0.5 ? 'i' : 'u';
     int NPoly = (typ_r == 'i' ? test_tube.NSim : test_tube.NSumo);
+    if(typ >= 'A' and typ <='Z') NPoly = test_tube.NSim;
     uniform_int_distribution<> dis(0, NPoly-1);
     int id_r = dis(gen);
     switch (typ)
@@ -438,6 +481,18 @@ void App<S,P>::Proceed(char typ)
             
         case 'c':
             cm.ExecMove(id_r, typ_r);
+            break;
+            
+        case 'S':
+            csm.ExecCoMove(id_r);
+            break;
+            
+        case 'E':
+            cem.ExecCoMove(id_r);
+            break;
+            
+        case 'C':
+            ccm.ExecCoMove(id_r);
             break;
             
         default:
@@ -483,7 +538,7 @@ vector<vector<string>> App<S, P>::GenericSpaceAnal(vector<string>& spacebuf)
 {
     spacebuf.pop_back();
     spacebuf.erase(spacebuf.begin());
-    assert(spacebuf[0].compare("Two dimensional single layer space") == 0);
+    assert(spacebuf[0].compare("Two dimensional single layer space") == 0 || spacebuf[0].compare("Two dimensional double layer space") == 0);
     assert(spacebuf[1].compare("Site occupation configuration: ") == 0);
     assert(spacebuf[spacebuf.size()-1].compare("END") == 0);
 

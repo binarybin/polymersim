@@ -20,6 +20,7 @@
 #include <iomanip>
 #include <utility>
 #include <string>
+#include <tuple>
 #include "position.h"
 using std::vector;
 using std::max;
@@ -29,6 +30,9 @@ using std::endl;
 using std::invalid_argument;
 using std::pair;
 using std::string;
+using std::tuple;
+using std::make_tuple;
+
 
 class Space2D2L
 {
@@ -94,7 +98,7 @@ public:
             
             
             int rows_min_sumo = ceil((double)NSumo/Lx);
-            int rows_max_sumo = Ly / LSumo;
+            int rows_max_sumo = (int) Ly / LSumo;
             int rows_sumo = -1;
             if (rows_max_sumo < rows_min_sumo)
                 throw invalid_argument("Dense Initialization failed for Sumo, maybe too dense");
@@ -209,7 +213,7 @@ public:
     {
         int xnew = newpoint.x; int ynew = newpoint.y; int layernew = newpoint.siml? 0:1;
         int xold = oldpoint.x; int yold = oldpoint.y; int layerold = newpoint.siml? 0:1;
-        
+     
         assert(layernew == layerold);
         assert(rspace[layernew][xnew][ynew][0] == NOBOND && rspace[layernew][xnew][ynew][1] == NOBOND);
         rspace[layernew][xnew][ynew][0] = rspace[layernew][xold][yold][0];
@@ -236,10 +240,28 @@ public:
         space[point.siml?0:1][point.x][point.y];
     }
 
+    void MoveTogether(Pos2d2l& oldpoint, Pos2d2l& newpoint)
+    {
+        int xold = oldpoint.x; int yold = oldpoint.y;
+        int xnew = newpoint.x; int ynew = newpoint.y;
+        
+        assert(space[0][xnew][ynew] == 0 && space[1][xnew][ynew] == 0);
+        assert(space[0][xold][yold] != 0 && space[1][xold][yold] != 0);
+        
+        space[0][xnew][ynew] = space[0][xold][yold]; space[0][xold][yold] = 0;
+        space[1][xnew][ynew] = space[1][xold][yold]; space[1][xold][yold] = 0;
+    }
+    
+    tuple<int, int> GetFromReverseSpace(Pos2d2l& cooldpoint)
+    {
+        int polyid  = rspace[cooldpoint.siml? 0:1][cooldpoint.x][cooldpoint.y][0];
+        int polypos = rspace[cooldpoint.siml? 0:1][cooldpoint.x][cooldpoint.y][0];
+        return make_tuple(polyid, polypos);
+    }
 };
 
 std::ostream& PrintSpace(std::ostream &out, Space2D2L &space);
 std::ostream& PrintBond(std::ostream &out, Space2D2L &space);
 std::ostream& PrintPolymer(std::ostream &out, Space2D2L &space);
-
+std::ostream& PrintRSpace(std::ostream &out, Space2D2L &space);
 #endif /* space2d2l_hpp */
