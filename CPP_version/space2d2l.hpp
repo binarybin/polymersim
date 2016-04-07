@@ -182,6 +182,71 @@ public:
         return space[bpoint.siml? 0:1][bpoint.x][bpoint.y] * sitevalue == -1;
     }
     
+    bool CanBuildRubiscoBondTentative(Polymer<Pos2d2l>& poly, char polytyp, int polyid, int pointid, Pos2d2l bpoint, int sitevalue)
+    {
+        // If the corresponding point is empty, there is no chance to build a bond
+        if (abs(space[bpoint.siml? 0:1][bpoint.x][bpoint.y]) != 1)
+        {
+            return false;
+        }
+        
+        
+        // This part is to account for the no-bond-on-two-ends rule
+        // If there exists a bond on the other half of Rubisco, we just return false
+        // This does not forbid the locational occupation
+        
+        // This point is SIM, or "Not Rubisco", length = 4
+        if (polytyp == 'i')
+        {
+            int potential_sumo_id = rspace[1][bpoint.x][bpoint.y][0];
+            int potential_sumo_loc = rspace[1][bpoint.x][bpoint.y][1];
+            for (int i = 0; i < 4; i++)
+            {
+                if (i == pointid)
+                    continue;
+
+                int x = poly.locs[i].x;
+                int y = poly.locs[i].y;
+                if (abs(space[0][x][y]) != 1) // That site is not 1 (free), so in a bond
+                    if (rspace[1][x][y][0] == potential_sumo_id) // The corresponding site in SUMO is on the same polymer
+                        if ((rspace[1][x][y][1]<4) != (potential_sumo_loc < 4)) // The site we try to work on is a different half
+                            return false;
+            }
+        }
+        //This point is SUMO, or "Rubisco", length = 8
+        else
+        {
+            int potential_sim_id = rspace[0][bpoint.x][bpoint.y][0];
+            int avoid_range[4];
+            if (pointid >= 4) // second half
+            {
+                avoid_range[0] = 0;
+                avoid_range[1] = 1;
+                avoid_range[2] = 2;
+                avoid_range[3] = 3;
+            }
+            else // first half
+            {
+                avoid_range[0] = 4;
+                avoid_range[1] = 5;
+                avoid_range[2] = 6;
+                avoid_range[3] = 7;
+            }
+            
+            for (int i : avoid_range) // Iterate through all points that should be avoided
+            {
+                int x = poly.locs[i].x;
+                int y = poly.locs[i].y;
+                if (abs(space[1][x][y]) != 1) // The site is not 1 (free), so in a bond
+                    if (rspace[0][x][y][0] == potential_sim_id) // It's connected to that same SIM
+                        return false;
+            }
+        }
+        
+        // If the other point is not empty and the no-bond-on-two-ends is passed, then we can build a bond
+        return true;
+    }
+    
     void DiluteInit(char direction);
     void DenseInit(int rows, char typ);
     void Place(char typ, int id, vector<Pos2d2l> locs) // i for sim, u for sumo

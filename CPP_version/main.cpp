@@ -40,7 +40,6 @@ vector<tuple<int, double, double, int>> GetTaskList(std::string filename)
         result.push_back(make_tuple(idx, beta, gamma, runs));
     }
 
-    
     in.close();
     
     return result;

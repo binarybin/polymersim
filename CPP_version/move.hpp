@@ -100,9 +100,17 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
     
     vector<P> bond_choice;
     
-    for (auto bpoint : space.BondNeighbor(newpoint))
+    // The version for SIM-SUMO system
+    /*for (auto bpoint : space.BondNeighbor(newpoint))
         if (space.CanBuildBondTentative(bpoint, sitevalue))
+            bond_choice.push_back(bpoint);*/
+    
+    // The version for Rubisco system
+    for (auto bpoint : space.BondNeighbor(newpoint))
+    {
+        if (space.CanBuildRubiscoBondTentative(poly, polytyp, polyid, pointid, bpoint, sitevalue))
             bond_choice.push_back(bpoint);
+    }
     
     if (!bond_choice.empty()) nbr_bond_inc ++;
     
