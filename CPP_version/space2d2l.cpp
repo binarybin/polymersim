@@ -177,8 +177,8 @@ void Space2D2L::DenseInit(int rows, char typ)
             cout<<"Initializing "<< (typ == 'i' ? "SIM " : "SUMO ")<<count<<" row "<<x<<" column "<<y<<endl;
             
             
-            vector<Pos2d2l> locs(LSim);
-            for (int l = 0; l < LSim; l++)
+            vector<Pos2d2l> locs(Length);
+            for (int l = 0; l < Length; l++)
             {
                 locs[l].siml = (typ=='i');
                 locs[l].x = x;
