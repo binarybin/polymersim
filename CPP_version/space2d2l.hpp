@@ -280,6 +280,8 @@ public:
             int x = locs[idx].x;
             int y = locs[idx].y;
             int layer = locs[idx].siml? 0:1;
+            if(space[layer][x][y] != 0)
+                throw(std::invalid_argument("Initialization: trying to assign one point with two monomers."));
             space[layer][x][y] = spacetype;
             rspace[layer][x][y][0] = id;
             rspace[layer][x][y][1] = idx;

@@ -211,9 +211,9 @@ void Space2D2L::DenseInit(int rows, char typ)
     {
         int Length = LSumo/2;
         int lines = ceil((float)NSumo/rows);
-        int dx = (int) Lx / (2*lines);
+        int dx = (int) Lx / (lines);
         cout << "Dense initialization: dx = "<<dx<<endl;
-        cout << "dx = " << Lx << " /(2*"<<lines<<")"<<endl;
+        cout << "dx = " << Lx << " /"<<lines<<endl;
         if(dx==0)
             throw std::invalid_argument("Just a little bit too dense. This can be settled but the current implementation does not support");
         int dy = (int) Ly/rows;
