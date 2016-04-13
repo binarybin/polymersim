@@ -71,12 +71,12 @@ public:
     
     void Initialize()
     {
-        if (max(LSim, LSumo) <= Ly && max(NSim, NSumo) < Lx)
+        if (max(LSim, LSumo) <= Ly && max(NSim, 2*NSumo) < Lx)
         {
             cout << "Used dilute initialization, horizontal" <<endl;
             DiluteInit('h');
         }
-        else if (max(LSim, LSumo) <= Lx && max(NSim, NSumo) < Ly)
+        else if (max(LSim, LSumo) <= Lx && max(NSim, 2*NSumo) < Ly)
         {
             cout << "Used dilute initialization, horizontal" <<endl;
             DiluteInit('v');
@@ -97,8 +97,8 @@ public:
             DenseInit(rows_sim, 'i');
             
             
-            int rows_min_sumo = ceil((double)NSumo/Lx);
-            int rows_max_sumo = (int) Ly / LSumo;
+            int rows_min_sumo = ceil((double)NSumo/(Lx/2));
+            int rows_max_sumo = (int) Ly / (LSumo/2);
             int rows_sumo = -1;
             if (rows_max_sumo < rows_min_sumo)
                 throw invalid_argument("Dense Initialization failed for Sumo, maybe too dense");
@@ -120,6 +120,19 @@ public:
     vector<Pos2d2l> BondNeighbor(Pos2d2l point)
     {
         return {Pos2d2l(point.x, point.y, !point.siml)};
+    }
+    
+    void UnsafeRemoveBond(Pos2d2l point)
+    {
+        int x = point.x;
+        int y = point.y;
+        int layer = point.siml? 0:1;
+        if(abs(space[layer][x][y]) == 2)
+        {
+            assert(space[1-layer][x][y] * space[layer][x][y] == -4);
+            space[layer][x][y] /= 2;
+            space[1-layer][x][y] /= 2;
+        }
     }
     
     void SafeRemove(Pos2d2l point)
@@ -156,10 +169,14 @@ public:
         int layer2 = point2.siml? 0:1;
         
         assert(layer1+layer2 == 1 && x1==x2 && y1==y2);
-        assert(abs(space[layer1][x1][y1]) == 1 && abs(space[layer2][x2][y2]));
+        assert(abs(space[layer1][x1][y1]) == 1 && abs(space[layer2][x2][y2]) == 1);
         
         space[layer1][x1][y1] *= 2;
         space[layer2][x2][y2] *= 2;
+    }
+    void CreateBond(Pos2d2l point)
+    {
+        CreateBond(point, BondNeighbor(point)[0]);
     }
     
     bool CanBuildBond(Pos2d2l point1, Pos2d2l point2)

@@ -49,7 +49,6 @@ public:
     int GetSucc(){return succ;}
     
     tuple<bool, int> ExecMove(int polyid, char polytyp);
-    tuple<bool, int> ExecCoMove(int simid);
     void SetBeta(double setbeta)  {beta = setbeta;}
     void SetGamma(double setgamma) {gamma = setgamma;}
     
@@ -61,14 +60,7 @@ public:
         return bond_choice[id];
     }
     
-    tuple<int, P> ChooseMove(vector<tuple<int, P>> possible_moves)
-    {
-        uniform_int_distribution<> dis(0, (int)possible_moves.size()-1);
-        size_t id = dis(gen);
-        assert(id >= 0 && id < possible_moves.size());
-        return possible_moves[id];
-    }
-    tuple<int, P, int, int, P> ChooseCoMove(vector<tuple<int, Pos2d2l, int, int, Pos2d2l>> possible_moves)
+    tuple<int, int, P> ChooseMove(vector<tuple<int, int, P>> possible_moves)
     {
         uniform_int_distribution<> dis(0, (int)possible_moves.size()-1);
         size_t id = dis(gen);
@@ -77,8 +69,86 @@ public:
     }
     
     double Weight(int nbr_bond_inc, int nbr_ps_inc) {return exp(nbr_bond_inc * beta - nbr_ps_inc * gamma);}
-   
+    tuple<int, vector<int>> ComputeBondInc(Polymer<P>& poly, vector<P> newpoints);
 };
+
+template <class S, class P, class M>
+tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P> newpoints)
+{
+    int old_nbr_bond = 0, new_nbr_bond = 0;
+    for (auto oldpoint : poly.locs)
+    {
+        if (space.InABond(oldpoint))
+        {
+            old_nbr_bond ++;
+        }
+    }
+    
+    std::map<int, vector<pair<int, int>>> epyc_rubisco; //map from rubisco_id to (point_in_epic, point_in_rubisco)
+    for (int i = 0; i < space.LSim; i++)
+    {
+        P bpoint = space.BondNeighbor(newpoints[i])[0];
+        int rubiscoid = space.GetRspacePoint(bpoint)[0];
+        int rubiscopos = space.GetRspacePoint(bpoint)[1];
+        if (rubiscoid != NOBOND)
+        {
+            epyc_rubisco[rubiscoid].push_back(std::make_pair(i, rubiscopos));
+        }
+    }
+    
+    vector<int> result_pos;
+    
+    vector<pair<int, vector<pair<int, int>>>> intersect;
+    
+    for(auto epyc_link : epyc_rubisco)
+    {
+        if (epyc_link.second.size() > 1)
+            intersect.push_back(epyc_link);
+        else
+            result_pos.push_back(epyc_link.second[0].first);
+    }
+    
+    for (auto epyc_link : intersect)
+        // each epyc_link is a pair with an epyc_id and a vector of rubisco points connected to it
+    {
+        int nbr_first_half = 0;
+        int nbr_second_half = 0;
+        
+        for (auto pt_epyc_rubi : epyc_link.second)
+        {
+            if (pt_epyc_rubi.second >= 0 && pt_epyc_rubi.second < 4) nbr_first_half ++;
+            else if (pt_epyc_rubi.second < 8 && pt_epyc_rubi.second >=4) nbr_second_half ++;
+            else
+                throw(std::invalid_argument("ComputeBondInc"));
+        }
+        
+        
+        if (nbr_first_half == nbr_second_half) // The equal case, randomly decide which half to pick
+        {
+            if (rand()%2 == 0)
+                nbr_first_half ++;
+            else
+                nbr_second_half ++;
+        }
+        
+        
+        if (nbr_first_half > nbr_second_half)
+        {
+            for (auto pt_epyc_rubi : epyc_link.second)
+                if (pt_epyc_rubi.second >= 0 && pt_epyc_rubi.second < 4)
+                    result_pos.push_back(pt_epyc_rubi.first);
+        }
+        else
+        {
+            for (auto pt_epyc_rubi : epyc_link.second)
+                if (pt_epyc_rubi.second < 8 && pt_epyc_rubi.second >= 4)
+                    result_pos.push_back(pt_epyc_rubi.first);
+        }
+    }
+    
+    new_nbr_bond = result_pos.size();
+    return std::make_tuple(new_nbr_bond - old_nbr_bond, result_pos);
+}
 
 
 template <class S, class P, class M>
@@ -87,32 +157,18 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
     Polymer<P>& poly = polytyp=='i' ? space.Sims[polyid] : space.Sumos[polyid];
     int sitevalue = polytyp=='i' ? 1 : -1;
     
-    int nbr_bond_inc = 0;
-    vector<tuple<int, P>> possible_moves = move.GetPossibleMoves(poly);
+    vector<tuple<int, int, P>> possible_moves = move.GetPossibleMoves(poly);
     
-    if (possible_moves.empty()) return make_tuple(false, nbr_bond_inc);
+    if (possible_moves.empty()) return make_tuple(false, 0);
     
-    int pointid = 0; P newpoint; tie(pointid, newpoint) = ChooseMove(possible_moves);
+    int kill_pointid = 0; int create_pointid; P newpoint; tie(kill_pointid, create_pointid, newpoint) = ChooseMove(possible_moves);
     
-    P oldpoint = poly.locs[pointid];
+    P oldpoint = poly.locs[kill_pointid];
     
-    if (space.InABond(oldpoint)) nbr_bond_inc --;
-    
-    vector<P> bond_choice;
-    
-    // The version for SIM-SUMO system
-    /*for (auto bpoint : space.BondNeighbor(newpoint))
-        if (space.CanBuildBondTentative(bpoint, sitevalue))
-            bond_choice.push_back(bpoint);*/
-    
-    // The version for Rubisco system
-    for (auto bpoint : space.BondNeighbor(newpoint))
-    {
-        if (space.CanBuildRubiscoBondTentative(poly, polytyp, polyid, pointid, bpoint, sitevalue))
-            bond_choice.push_back(bpoint);
-    }
-    
-    if (!bond_choice.empty()) nbr_bond_inc ++;
+    int nbr_bond_inc = 0; vector<int> bond_id_list;
+    Polymer<P> temp_new_polymer = poly;
+    move.UpdatePolymer(temp_new_polymer, kill_pointid, newpoint);
+    tie(nbr_bond_inc, bond_id_list) = ComputeBondInc(poly, temp_new_polymer.locs);
     
     int nbr_ps_inc = 0;
     for (auto& pt : space.Neighbor(oldpoint))
@@ -121,37 +177,33 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
         {
             nbr_ps_inc --;
         }
-        else
-        {
-            nbr_ps_inc ++;
-        }
     }
     
     for (auto& pt : space.Neighbor(newpoint))
     {
-        if (space.EmptyPos(pt))
+        if (space.EmptyPos(pt) || space.GetRspacePoint(pt)[0] == polyid)
         {
             nbr_ps_inc ++;
-        }
-        else
-        {
-            nbr_ps_inc --;
         }
     }
     
     if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc, nbr_ps_inc))
     {
+        for (auto oldpoint : poly.locs)
+        {
+            space.UnsafeRemoveBond(oldpoint);
+        }
         assert(!space.EmptyPos(oldpoint));
         space.SafeRemove(oldpoint);
         space.SafeCreate(newpoint, sitevalue);
-        move.UpdatePolymer(poly, pointid, newpoint);
+        move.UpdatePolymer(poly, kill_pointid, newpoint);
         move.UpdateReverseCheckingSpace(oldpoint, newpoint, poly);
         
-        if (!bond_choice.empty())
+        for (auto pointid : bond_id_list)
         {
-            P bpoint = ChooseBond(bond_choice);
-            space.CreateBond(newpoint, bpoint);
+            space.CreateBond(poly.locs[pointid]);
         }
+        
         succ += 1;
         bond_change += nbr_bond_inc;
         
@@ -160,102 +212,5 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
     else
         return make_tuple(false, nbr_bond_inc);
 }
-
-template <class S, class P, class M>
-tuple<bool, int> Move<S, P, M>::ExecCoMove(int simid)
-{
-    Polymer<P>& poly = space.Sims[simid];
-    
-    vector<tuple<int, P, int, int, P>> possible_comoves = move.GetPossibleCoMoves(poly);
-    //move sims[simid]$1 to $2, move sumos[$3]$4 to $5
-    
-    if (possible_comoves.empty()) return make_tuple(false, 0);
-    
-    int simpointid = 0; int sumoid = 0; int sumopointid = 0; P newsimpoint; P newsumopoint;
-    tie(simpointid, newsimpoint, sumoid, sumopointid, newsumopoint) = ChooseCoMove(possible_comoves);
-    
-    P oldsimpoint = poly.locs[simpointid];
-    P oldsumopoint = oldsimpoint.OtherLayer();
-    
-    int nbr_bond_inc = 0;
-    
-    if(!space.InABond(oldsimpoint))
-        nbr_bond_inc ++;
-    
-    int nbr_ps_inc = 0;
-    for (auto& pt : space.Neighbor(oldsimpoint))
-    {
-        if (space.EmptyPos(pt))
-        {
-            nbr_ps_inc --;
-        }
-        else
-        {
-            nbr_ps_inc ++;
-        }
-    }
-    
-    for (auto& pt : space.Neighbor(newsimpoint))
-    {
-        if (space.EmptyPos(pt))
-        {
-            nbr_ps_inc ++;
-        }
-        else
-        {
-            nbr_ps_inc --;
-        }
-    }
-    for (auto& pt : space.Neighbor(oldsumopoint))
-    {
-        if (space.EmptyPos(pt))
-        {
-            nbr_ps_inc --;
-        }
-        else
-        {
-            nbr_ps_inc ++;
-        }
-    }
-    
-    for (auto& pt : space.Neighbor(newsumopoint))
-    {
-        if (space.EmptyPos(pt))
-        {
-            nbr_ps_inc ++;
-        }
-        else
-        {
-            nbr_ps_inc --;
-        }
-    }
-
-
-    
-    if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc, nbr_ps_inc))
-    {
-        space.SafeRemove(oldsimpoint);
-        space.SafeRemove(oldsumopoint);
-        space.SafeCreate(newsimpoint, 1);
-        space.SafeCreate(newsumopoint, -1);
-        
-        move.UpdatePolymer(poly, simpointid, newsimpoint);
-        move.UpdatePolymer(space.Sumos[sumoid], sumopointid, newsumopoint);
-        
-        move.UpdateReverseCheckingSpace(oldsimpoint, newsimpoint, poly);
-        move.UpdateReverseCheckingSpace(oldsumopoint, newsumopoint, space.Sumos[sumoid]);
-        
-        space.CreateBond(newsimpoint, newsumopoint);
-        succ += 1;
-        
-        return make_tuple(true, nbr_bond_inc);
-    }
-    else
-        return make_tuple(false, nbr_bond_inc);
-
-    
-    
-}
-
 
 #endif /* move_hpp */
