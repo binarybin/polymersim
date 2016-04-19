@@ -42,6 +42,8 @@ class App
     Move<S, P, EndMove<S, P>> em;
     RubiMove<S, P, TranslationMove<S, P>> tm;
     RubiMove<S, P, RotationMove<S, P>> rm;
+    RubiMove<S, P, TranslationMove<S, P>> Tm;
+    RubiMove<S, P, RotationMove<S, P>> Rm;
     random_device rd;
     mt19937 gen;
     int original_nbr_bond;
@@ -49,7 +51,7 @@ public:
     App(int nsim, int nsumo, int lsim, int lsumo, size_t lx, size_t ly):
         test_tube(nsim, nsumo, lsim, lsumo, lx, ly),
         sm(test_tube), cm(test_tube), em(test_tube),
-        tm(test_tube), rm(test_tube),
+        tm(test_tube), rm(test_tube), Tm(test_tube), Rm(test_tube),
         gen(rd()), original_nbr_bond(0) {}
     
     void Initialize() {test_tube.Initialize();}
@@ -84,6 +86,17 @@ public:
                 returnvalue = rm.GetSucc();
                 rm.ClearSucc();
                 break;
+            
+            case 'T':
+                returnvalue = Tm.GetSucc();
+                Tm.ClearSucc();
+                break;
+                
+            case 'R':
+                returnvalue = Rm.GetSucc();
+                Rm.ClearSucc();
+                break;
+
                 
             default:
                 break;
@@ -103,6 +116,9 @@ public:
         em.SetBeta(beta);
         tm.SetBeta(beta);
         rm.SetBeta(beta);
+        Tm.SetBeta(beta);
+        Rm.SetBeta(beta);
+        
     }
     
     void SetGamma(double gamma)
@@ -112,6 +128,8 @@ public:
         em.SetGamma(gamma);
         tm.SetGamma(gamma);
         rm.SetGamma(gamma);
+        Tm.SetGamma(gamma);
+        Rm.SetGamma(gamma);
     }
     
     void Dump(std::ostream &out)
@@ -474,6 +492,13 @@ void App<S,P>::Proceed(char typ)
             
         case 'r':
             rm.ExecMove(id_r, 'u');
+            break;
+            
+        case 'T':
+            Tm.ExecTriMove(id_r);
+            break;
+        case 'R':
+            Rm.ExecTriMove(id_r);
             break;
             
         default:
