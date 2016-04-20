@@ -447,7 +447,7 @@ void App<Space2D2L, Pos2d2l>::TestReverseSpace()
     }
 
     
-    cout<<"Reverse space test passed!"<<endl;
+   // cout<<"Reverse space test passed!"<<endl;
 }
 
 template <class S, class P>

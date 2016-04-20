@@ -90,6 +90,22 @@ public:
         for (int i = 0; i < newpoints.size(); i++)
             space.SetRspacePoint(newpoints[i], polyid, i);
     }
+    void UpdateReverseCheckingSpaceEpycCoMove(vector<P>& oldpoints1, vector<P> newpoints1, vector<P>& oldpoints2, vector<P> newpoints2)
+    {
+        int polyid1 = space.GetRspacePoint(oldpoints1[0])[0];
+        int polyid2 = space.GetRspacePoint(oldpoints2[0])[0];
+        
+        for (auto oldpt: oldpoints1)
+            space.SetRspacePoint(oldpt, NOBOND, NOBOND);
+        
+        for (auto oldpt: oldpoints2)
+            space.SetRspacePoint(oldpt, NOBOND, NOBOND);
+        
+        for (int i = 0; i < newpoints1.size(); i++)
+            space.SetRspacePoint(newpoints1[i], polyid1, i);
+        for (int i = 0; i < newpoints2.size(); i++)
+            space.SetRspacePoint(newpoints2[i], polyid2, i);
+    }
     
     void BuildNewBonds(vector<P> newpoints, vector<int> bond_id_list)
     {
@@ -231,7 +247,13 @@ bool RubiMove<S, P, M>::ExecTriMove(int polyid)
         }
         
         
-        for (auto oldpoint : space.Sims[tri_move_info.epyc1id].locs)
+        for (auto oldpoint : space.Sims[epyc1id].locs)
+        {
+            assert(!space.EmptyPos(oldpoint));
+            space.SafeRemove(oldpoint);
+        }
+        
+        for (auto oldpoint : space.Sims[epyc2id].locs)
         {
             assert(!space.EmptyPos(oldpoint));
             space.SafeRemove(oldpoint);
@@ -243,28 +265,95 @@ bool RubiMove<S, P, M>::ExecTriMove(int polyid)
             space.SafeCreate(newpoint, 1);
         }
         
-        for (auto oldpoint : space.Sims[tri_move_info.epyc2id].locs)
-        {
-            assert(!space.EmptyPos(oldpoint));
-            space.SafeRemove(oldpoint);
-        }
-        
         for (auto newpoint : tri_move_info.epyc2newpoints)
         {
             assert(space.EmptyPos(newpoint));
             space.SafeCreate(newpoint, 1);
         }
         
+        for (auto pt : space.Sims[epyc1id].locs)
+        {
+            assert(space.GetRspacePoint(pt)[0] == epyc1id);
+        }
+        
+        for (auto pt : space.Sims[epyc2id].locs)
+        {
+            assert(space.GetRspacePoint(pt)[0] == epyc2id);
+        }
+        
+        for (auto pt : poly.locs)
+        {
+            assert(space.GetRspacePoint(pt)[0] == polyid);
+        }
         UpdateReverseCheckingSpace(poly.locs, tri_move_info.rubisconewpoints);
-        UpdateReverseCheckingSpace(space.Sims[tri_move_info.epyc1id].locs, tri_move_info.epyc1newpoints);
-        UpdateReverseCheckingSpace(space.Sims[tri_move_info.epyc2id].locs, tri_move_info.epyc2newpoints);
+        UpdateReverseCheckingSpaceEpycCoMove(space.Sims[epyc1id].locs, tri_move_info.epyc1newpoints, space.Sims[epyc2id].locs, tri_move_info.epyc2newpoints);
+        
         poly.locs = tri_move_info.rubisconewpoints;
-        space.Sims[tri_move_info.epyc1id].locs = tri_move_info.epyc1newpoints;
-        space.Sims[tri_move_info.epyc2id].locs = tri_move_info.epyc2newpoints;
+        space.Sims[epyc1id].locs = tri_move_info.epyc1newpoints;
+        space.Sims[epyc2id].locs = tri_move_info.epyc2newpoints;
+        
+        
         
         BuildNewBonds(tri_move_info.rubisconewpoints, tri_move_info.rubiscoinbond);
-        
         succ ++;
+//        cout<<"Made a tri-move epyc "<<epyc1id<<" and "<<epyc2id<<" and rubisco "<<polyid<<endl;
+//        
+//        cout<<"From: "<<endl;
+//        for (auto pt : space.Sims[epyc1id].locs)
+//        {
+//            cout<<pt.x<<" "<<pt.y<<" "<<"("<<space.GetRspacePoint(pt)[0]<<","<<space.GetRspacePoint(pt)[1]<<")\t";
+//        }
+//        cout<<endl;
+//        
+//        for (auto pt : space.Sims[epyc2id].locs)
+//        {
+//            cout<<pt.x<<" "<<pt.y<<" "<<"("<<space.GetRspacePoint(pt)[0]<<","<<space.GetRspacePoint(pt)[1]<<")\t";
+//        }
+//        cout<<endl;
+//        
+//        for (auto pt : poly.locs)
+//        {
+//            cout<<pt.x<<" "<<pt.y<<" "<<"("<<space.GetRspacePoint(pt)[0]<<","<<space.GetRspacePoint(pt)[1]<<")\t";
+//        }
+//        cout<<endl;
+        
+        
+        
+        
+        
+//        cout<<"To: "<<endl;
+//        for (auto pt : space.Sims[epyc1id].locs)
+//        {
+//            cout<<pt.x<<" "<<pt.y<<" "<<"("<<space.GetRspacePoint(pt)[0]<<","<<space.GetRspacePoint(pt)[1]<<")\t";
+//        }
+//        cout<<endl;
+//        
+//        for (auto pt : space.Sims[epyc2id].locs)
+//        {
+//            cout<<pt.x<<" "<<pt.y<<" "<<"("<<space.GetRspacePoint(pt)[0]<<","<<space.GetRspacePoint(pt)[1]<<")\t";
+//        }
+//        cout<<endl;
+//        
+//        for (auto pt : poly.locs)
+//        {
+//            cout<<pt.x<<" "<<pt.y<<" "<<"("<<space.GetRspacePoint(pt)[0]<<","<<space.GetRspacePoint(pt)[1]<<")\t";
+//        }
+//        cout<<endl;
+//        
+//        for (auto pt : space.Sims[epyc1id].locs)
+//        {
+//            assert(space.GetRspacePoint(pt)[0] == epyc1id);
+//        }
+//        
+//        for (auto pt : space.Sims[epyc2id].locs)
+//        {
+//            assert(space.GetRspacePoint(pt)[0] == epyc2id);
+//        }
+//        
+//        for (auto pt : poly.locs)
+//        {
+//            assert(space.GetRspacePoint(pt)[0] == polyid);
+//        }
         
         return true;
     }
@@ -276,24 +365,30 @@ bool RubiMove<S, P, M>::ExecTriMove(int polyid)
 template <class S, class P, class M>
 tuple<bool, int, int> RubiMove<S,P,M>::IsATrimerState(int rubiscoid)//use the simplist creteria: two epycs, full overlap
 {
-    std::set<int> epycids;
+    std::unordered_map<int, vector<int>> epycids;
+    
     for (auto point : space.Sumos[rubiscoid].locs)
     {
-        int epycid = space.GetRspacePoint(point)[0];
+        int epycid = space.GetRspacePoint(space.BondNeighbor(point)[0])[0];
         if (epycid != NOBOND)
-            epycids.insert(epycid);
+            epycids[epycid].push_back(1);
     }
-    if (epycids.size() != 2)
-        return false;
     
-    for (int epycid : epycids)
+    vector<int> epids;
+    
+    for (auto epycid : epycids)
     {
-        for(auto point : space.Sims[epycid].locs)
+        if (epycid.second.size() != 4)
         {
-            if (space.GetRspacePoint(point)[0] != rubiscoid)    return make_tuple(false, 0, 0);
+            return make_tuple(false, 0, 0);
         }
+        epids.push_back(epycid.first);
     }
-    vector<int> epids(epycids.begin(), epycids.end());
+    
+    if (epids.size() != 2)
+    {
+        return make_tuple(false, 0, 0);
+    }
     
     return make_tuple(true, epids[0], epids[1]);
 }
@@ -324,12 +419,15 @@ TriMoveInfo<P> RubiMove<S,P,M>::CleanUpTheTriMove(int rubiscoid, int epyc1id, in
     
     result.epyc1id = epyc1id;
     result.epyc2id = epyc2id;
+    result.rubiscoid = rubiscoid;
     result.rubisconewpoints = new_rubisco_points;
     
     
     for (auto pointepyc : space.Sims[result.epyc1id].locs)
     {
         auto pos_rubi = space.GetRspacePoint(space.BondNeighbor(pointepyc)[0])[1];
+        auto rubitestid = space.GetRspacePoint(space.BondNeighbor(pointepyc)[0])[0];
+        assert(rubitestid == rubiscoid);
         assert(pos_rubi >= 0 && pos_rubi<space.LSumo);
         auto new_epyc_point = space.BondNeighbor(new_rubisco_points[pos_rubi])[0];
         result.epyc1newpoints.push_back(new_epyc_point);
@@ -338,6 +436,8 @@ TriMoveInfo<P> RubiMove<S,P,M>::CleanUpTheTriMove(int rubiscoid, int epyc1id, in
     for (auto pointepyc : space.Sims[result.epyc2id].locs)
     {
         auto pos_rubi = space.GetRspacePoint(space.BondNeighbor(pointepyc)[0])[1];
+        auto rubitestid = space.GetRspacePoint(space.BondNeighbor(pointepyc)[0])[0];
+        assert(rubitestid == rubiscoid);
         assert(pos_rubi >= 0 && pos_rubi<space.LSumo);
         auto new_epyc_point = space.BondNeighbor(new_rubisco_points[pos_rubi])[0];
         result.epyc2newpoints.push_back(new_epyc_point);
@@ -350,6 +450,39 @@ TriMoveInfo<P> RubiMove<S,P,M>::CleanUpTheTriMove(int rubiscoid, int epyc1id, in
             result.rubiscoinbond.push_back(i);
         }
     }
+    
+    //This code is to test consistency
+//    std::set<tuple<int, int>> before_epyc, before_rubisco, after_epyc, after_rubisco;
+//    for (auto pt : space.Sims[result.epyc1id].locs)
+//    {
+//        before_epyc.insert(std::make_tuple(pt.x, pt.y));
+//    }
+//    for (auto pt : space.Sims[result.epyc2id].locs)
+//    {
+//        before_epyc.insert(std::make_tuple(pt.x, pt.y));
+//    }
+//    for (auto pt : space.Sumos[result.rubiscoid].locs)
+//    {
+//        before_rubisco.insert(std::make_tuple(pt.x, pt.y));
+//    }
+//    assert(before_epyc == before_rubisco);
+//    
+//    for (auto pt : result.epyc1newpoints)
+//    {
+//        after_epyc.insert(std::make_tuple(pt.x, pt.y));
+//    }
+//    for (auto pt : result.epyc2newpoints)
+//    {
+//        after_epyc.insert(std::make_tuple(pt.x, pt.y));
+//    }
+//    for (auto pt : result.rubisconewpoints)
+//    {
+//        after_rubisco.insert(std::make_tuple(pt.x, pt.y));
+//    }
+//    assert(after_epyc == after_rubisco);
+//    
+//    cout<<"built trimove, no problem"<<endl;
+    
     return result;
     
     
