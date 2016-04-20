@@ -146,7 +146,7 @@ tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P
         }
     }
     
-    new_nbr_bond = result_pos.size();
+    new_nbr_bond = (int)(result_pos.size());
     return std::make_tuple(new_nbr_bond - old_nbr_bond, result_pos);
 }
 

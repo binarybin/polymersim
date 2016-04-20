@@ -199,7 +199,7 @@ public:
         return space[bpoint.siml? 0:1][bpoint.x][bpoint.y] * sitevalue == -1;
     }
     
-    bool CanBuildRubiscoBondTentative(Polymer<Pos2d2l>& poly, char polytyp, int polyid, int pointid, Pos2d2l bpoint, int sitevalue)
+    bool CanBuildRubiscoBondTentative(Polymer<Pos2d2l>& poly, char polytyp, int polyid, int pointid, Pos2d2l bpoint, int sitevalue, int epyc_length)
     {
         // If the corresponding point is empty, there is no chance to build a bond
         if (abs(space[bpoint.siml? 0:1][bpoint.x][bpoint.y]) != 1)
@@ -212,12 +212,12 @@ public:
         // If there exists a bond on the other half of Rubisco, we just return false
         // This does not forbid the locational occupation
         
-        // This point is SIM, or "Not Rubisco", length = 4
+        // This point is EPYC
         if (polytyp == 'i')
         {
             int potential_sumo_id = rspace[1][bpoint.x][bpoint.y][0];
             int potential_sumo_loc = rspace[1][bpoint.x][bpoint.y][1];
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < epyc_length; i++)
             {
                 if (i == pointid)
                     continue;
