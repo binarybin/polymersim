@@ -14,6 +14,7 @@
 #include <tuple>
 #include <random>
 #include <set>
+#include <algorithm>
 #include <unordered_map>
 #include "space2d1l.hpp"
 #include "space2d2l.hpp"
@@ -116,53 +117,22 @@ public:
     }
     tuple<int, vector<int>> ComputeBondInc(Polymer<P> poly, vector<P> newpoints);
     
-    int ComputePSInc(Polymer<P> poly, vector<P> newpoints, int polyid)
+    bool PointInVector(P point, vector<P>& vec)
     {
-        int old_nbr_ps = 0, new_nbr_ps = 0;
-        for (auto oldpoint : poly.locs)
+        for (auto pt : vec)
         {
-            for (auto pt : space.Neighbor(oldpoint))
+            assert(pt.siml == point.siml);
+            if (pt.x == point.x && pt.y == point.y)
             {
-                if (space.EmptyPos(pt))
-                {
-                    old_nbr_ps ++;
-                }
+                return true;
             }
         }
-        
-        for (auto newpoint : newpoints)
-        {
-            for (auto pt : space.Neighbor(newpoint))
-            {
-                if (space.EmptyPos(pt) || space.GetRspacePoint(pt)[0] == polyid)
-                {
-                    new_nbr_ps ++;
-                }
-            }
-        }
-        return new_nbr_ps - old_nbr_ps;
+        return false;
     }
-    
-    int ComputePSIncTri(TriMoveInfo<P>& the_trimove)
-    {
-        int ps_inc_rubisco = ComputePSInc(space.Sumos[the_trimove.rubiscoid], the_trimove.rubisconewpoints, the_trimove.rubiscoid);
-        int ps_inc_onlyepyc1 = ComputePSInc(space.Sims[the_trimove.epyc1id], the_trimove.epyc1newpoints, the_trimove.epyc1id);
-        int ps_inc_onlyepyc2 = ComputePSInc(space.Sims[the_trimove.epyc2id], the_trimove.epyc2newpoints, the_trimove.epyc2id);
-        int ps_epycs_interface = 0;
-        for (auto newpoint : space.Sims[the_trimove.epyc1id].locs)
-        {
-            for (auto pt : space.Neighbor(newpoint))
-            {
-                if (space.GetRspacePoint(pt)[0] == the_trimove.epyc2id)
-                {
-                    ps_epycs_interface ++;
-                }
-            }
-        }
-        
-        return ps_inc_rubisco + ps_inc_onlyepyc1 + ps_inc_onlyepyc2 - ps_epycs_interface;
-    }
-
+    int ComputePSIncCrossLayer(Polymer<P> poly, vector<P> newpoints, int polyid);
+    int ComputePSIncSameLayer(Polymer<P> poly, vector<P> newpoints, int polyid);
+    int ComputePSIncTriSameLayer(TriMoveInfo<P>& the_trimove);
+    int ComputePSIncTriCrossLayer(TriMoveInfo<P>& the_trimove);
 };
 
 
@@ -181,7 +151,7 @@ tuple<bool, int> RubiMove<S, P, M>::ExecMove(int polyid, char polytyp)
     int nbr_bond_inc = 0; vector<int> bond_id_list;
     tie(nbr_bond_inc, bond_id_list) = ComputeBondInc(poly, newpoints);
     
-    int nbr_ps_inc = ComputePSInc(poly, newpoints, polyid);
+    int nbr_ps_inc = ComputePSIncCrossLayer(poly, newpoints, polyid) + ComputePSIncSameLayer(poly, newpoints, polyid);
     
     if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc, nbr_ps_inc))
     {
@@ -230,7 +200,7 @@ bool RubiMove<S, P, M>::ExecTriMove(int polyid)
     
     TriMoveInfo<P> tri_move_info = CleanUpTheTriMove(polyid, epyc1id, epyc2id, newpoints); // Based on those info, determine the move details
     
-    int nbr_ps_inc = ComputePSIncTri(tri_move_info);
+    int nbr_ps_inc = ComputePSIncTriSameLayer(tri_move_info) + ComputePSIncTriCrossLayer(tri_move_info);
     
     if (generate_canonical<double, 10>(gen) < Weight(0, nbr_ps_inc))
     {
@@ -566,14 +536,170 @@ tuple<int, vector<int>> RubiMove<S,P,M>::ComputeBondInc(Polymer<P> poly, vector<
 }
 
 
+template <class S, class P, class M>
+int RubiMove<S,P,M>::ComputePSIncCrossLayer(Polymer<P> poly, vector<P> newpoints, int polyid)
+{
+    int old_nbr_ps = 0, new_nbr_ps = 0;
+    for (auto oldpoint : poly.locs)
+    {
+        for (auto pt : space.Neighbor(space.BondNeighbor(oldpoint)[0]))
+        {
+            if (space.EmptyPos(pt))
+            {
+                old_nbr_ps ++;
+            }
+        }
+    }
+    
+    for (auto newpoint : newpoints)
+    {
+        for (auto pt : space.Neighbor(space.BondNeighbor(newpoint)[0]))
+        {
+            if (space.EmptyPos(pt))
+            {
+                new_nbr_ps ++;
+            }
+        }
+    }
+    return new_nbr_ps - old_nbr_ps;
+}
+
+template <class S, class P, class M>
+int RubiMove<S,P,M>::ComputePSIncSameLayer(Polymer<P> poly, vector<P> newpoints, int polyid)
+{
+    int old_nbr_ps = 0, new_nbr_ps = 0;
+    for (auto oldpoint : poly.locs)
+    {
+        for (auto pt : space.Neighbor(oldpoint))
+        {
+            if (space.EmptyPos(pt))
+            {
+                old_nbr_ps ++;
+            }
+        }
+    }
+    
+    for (auto newpoint : newpoints)
+    {
+        for (auto pt : space.Neighbor(newpoint))
+        {
+            bool will_be_killed = space.GetRspacePoint(pt)[0] == polyid;
+            bool currently_empty = space.EmptyPos(pt);
+            
+            bool will_be_created = PointInVector(pt, newpoints); // pt is in newpoints
+            
+            bool will_be_PS = (will_be_killed || currently_empty) && (! will_be_created);
+            
+            if (will_be_PS)
+            {
+                new_nbr_ps ++;
+            }
+        }
+    }
+    return new_nbr_ps - old_nbr_ps;
+}
 
 
+template <class S, class P, class M>
+int RubiMove<S,P,M>::ComputePSIncTriSameLayer(TriMoveInfo<P>& the_trimove)
+{
+    int ps_inc_rubisco = ComputePSIncSameLayer(space.Sumos[the_trimove.rubiscoid], the_trimove.rubisconewpoints, the_trimove.rubiscoid);
+    int ps_inc_onlyepyc1 = ComputePSIncSameLayer(space.Sims[the_trimove.epyc1id], the_trimove.epyc1newpoints, the_trimove.epyc1id);
+    int ps_inc_onlyepyc2 = ComputePSIncSameLayer(space.Sims[the_trimove.epyc2id], the_trimove.epyc2newpoints, the_trimove.epyc2id);
+    int ps_epycs_interface = 0;
+    for (auto newpoint : space.Sims[the_trimove.epyc1id].locs)
+    {
+        for (auto pt : space.Neighbor(newpoint))
+        {
+            if (space.GetRspacePoint(pt)[0] == the_trimove.epyc2id)
+            {
+                ps_epycs_interface ++;
+            }
+        }
+    }
+    
+    return ps_inc_rubisco + ps_inc_onlyepyc1 + ps_inc_onlyepyc2 - ps_epycs_interface;
+}
 
 
-
-
-
-
+template <class S, class P, class M>
+int RubiMove<S,P,M>::ComputePSIncTriCrossLayer(TriMoveInfo<P>& the_trimove)
+{
+    int old_nbr_ps = 0;
+    
+    for (auto oldpoint : space.Sumos[the_trimove.rubiscoid].locs)
+    {
+        for (auto pt : space.Neighbor(space.BondNeighbor(oldpoint)[0]))
+        {
+            if (space.EmptyPos(pt))
+            {
+                old_nbr_ps ++;
+            }
+        }
+    }
+    
+    for (auto oldpoint : space.Sims[the_trimove.epyc1id].locs)
+    {
+        for (auto pt : space.Neighbor(space.BondNeighbor(oldpoint)[0]))
+        {
+            if (space.EmptyPos(pt))
+            {
+                old_nbr_ps ++;
+            }
+        }
+    }
+    
+    for (auto oldpoint : space.Sims[the_trimove.epyc2id].locs)
+    {
+        for (auto pt : space.Neighbor(space.BondNeighbor(oldpoint)[0]))
+        {
+            if (space.EmptyPos(pt))
+            {
+                old_nbr_ps ++;
+            }
+        }
+    }
+    
+    // Count new number of PS bonds
+    int new_nbr_ps = 0;
+    auto epycnewpoints = the_trimove.epyc1newpoints;
+    epycnewpoints.insert(epycnewpoints.end(), the_trimove.epyc2newpoints.begin(), the_trimove.epyc2newpoints.end());
+    for (auto newpoint : epycnewpoints)
+    {
+        for (auto pt : space.Neighbor(space.BondNeighbor(newpoint)[0]))
+        {
+            bool will_be_killed = space.GetRspacePoint(pt)[0] == the_trimove.rubiscoid;
+            bool currently_empty = space.EmptyPos(pt);
+            
+            bool will_be_created = PointInVector(pt, the_trimove.rubisconewpoints); // pt is in newpoints
+            
+            bool will_be_PS = (will_be_killed || currently_empty) && (!will_be_created);
+            if (will_be_PS)
+            {
+                new_nbr_ps ++;
+            }
+        }
+    }
+    
+    for (auto newpoint : the_trimove.rubisconewpoints)
+    {
+        for (auto pt : space.Neighbor(space.BondNeighbor(newpoint)[0]))
+        {
+            bool will_be_killed = (space.GetRspacePoint(pt)[0] == the_trimove.epyc1id) || (space.GetRspacePoint(pt)[0] == the_trimove.epyc2id);
+            bool currently_empty = space.EmptyPos(pt);
+            
+            bool will_be_created = PointInVector(pt, epycnewpoints); // pt is in newpoints
+            
+            bool will_be_PS = (will_be_killed || currently_empty) && (!will_be_created);
+            if (will_be_PS)
+            {
+                new_nbr_ps ++;
+            }
+        }
+    }
+    
+    return new_nbr_ps - old_nbr_ps;
+}
 
 
 

@@ -70,6 +70,46 @@ public:
     
     double Weight(int nbr_bond_inc, int nbr_ps_inc) {return exp(nbr_bond_inc * beta - nbr_ps_inc * gamma);}
     tuple<int, vector<int>> ComputeBondInc(Polymer<P>& poly, vector<P> newpoints);
+    int ComputePSIncCrossLayer(P oldpoint, P newpoint, int polyid)
+    {
+        int nbr_ps_inc = 0;
+        for (auto& pt : space.Neighbor(space.BondNeighbor(oldpoint)[0]))
+        {
+            if (space.EmptyPos(pt))
+            {
+                nbr_ps_inc --;
+            }
+        }
+        
+        for (auto& pt : space.Neighbor(space.BondNeighbor(newpoint)[0]))
+        {
+            if (space.EmptyPos(pt))
+            {
+                nbr_ps_inc ++;
+            }
+        }
+        return nbr_ps_inc;
+    }
+    int ComputePSIncSameLayer(P oldpoint, P newpoint, int polyid)
+    {
+        int nbr_ps_inc = 0;
+        for (auto& pt : space.Neighbor(oldpoint))
+        {
+            if (space.EmptyPos(pt))
+            {
+                nbr_ps_inc --;
+            }
+        }
+        
+        for (auto& pt : space.Neighbor(newpoint))
+        {
+            if (space.EmptyPos(pt) || space.GetRspacePoint(pt)[0] == polyid)
+            {
+                nbr_ps_inc ++;
+            }
+        }
+        return nbr_ps_inc;
+    }
 };
 
 template <class S, class P, class M>
@@ -170,22 +210,10 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
     move.UpdatePolymer(temp_new_polymer, kill_pointid, newpoint);
     tie(nbr_bond_inc, bond_id_list) = ComputeBondInc(poly, temp_new_polymer.locs);
     
-    int nbr_ps_inc = 0;
-    for (auto& pt : space.Neighbor(oldpoint))
-    {
-        if (space.EmptyPos(pt))
-        {
-            nbr_ps_inc --;
-        }
-    }
     
-    for (auto& pt : space.Neighbor(newpoint))
-    {
-        if (space.EmptyPos(pt) || space.GetRspacePoint(pt)[0] == polyid)
-        {
-            nbr_ps_inc ++;
-        }
-    }
+    
+    // This part needs to be fixed
+    int nbr_ps_inc = ComputePSIncSameLayer(oldpoint, newpoint, polyid) + ComputePSIncCrossLayer(oldpoint, newpoint, polyid);
     
     if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc, nbr_ps_inc))
     {
