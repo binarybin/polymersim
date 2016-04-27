@@ -36,7 +36,6 @@ using std::generate_canonical;
 template <class S, class P>
 class App
 {
-    S test_tube;
     Move<S, P, SnakeMove<S, P>> sm;
     Move<S, P, CornerMove<S, P>> cm;
     Move<S, P, EndMove<S, P>> em;
@@ -48,6 +47,7 @@ class App
     mt19937 gen;
     int original_nbr_bond;
 public:
+    S test_tube;
     App(int nsim, int nsumo, int lsim, int lsumo, size_t lx, size_t ly):
         test_tube(nsim, nsumo, lsim, lsumo, lx, ly),
         sm(test_tube), cm(test_tube), em(test_tube),

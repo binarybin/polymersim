@@ -73,8 +73,12 @@ public:
                 app.Proceed('c');
                 app.Proceed('t');
                 app.Proceed('r');
-                app.Proceed('T');
-                app.Proceed('R');
+                if (app.test_tube.LSim*2 <= app.test_tube.LSumo)
+                {
+                    app.Proceed('T');
+                    app.Proceed('R');
+                }
+                
                 
                 if (i % (runs/10000) == 0)
                 {

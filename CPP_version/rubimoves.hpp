@@ -265,66 +265,7 @@ bool RubiMove<S, P, M>::ExecTriMove(int polyid)
         
         
         BuildNewBonds(tri_move_info.rubisconewpoints, tri_move_info.rubiscoinbond);
-        succ ++;
-//        cout<<"Made a tri-move epyc "<<epyc1id<<" and "<<epyc2id<<" and rubisco "<<polyid<<endl;
-//        
-//        cout<<"From: "<<endl;
-//        for (auto pt : space.Sims[epyc1id].locs)
-//        {
-//            cout<<pt.x<<" "<<pt.y<<" "<<"("<<space.GetRspacePoint(pt)[0]<<","<<space.GetRspacePoint(pt)[1]<<")\t";
-//        }
-//        cout<<endl;
-//        
-//        for (auto pt : space.Sims[epyc2id].locs)
-//        {
-//            cout<<pt.x<<" "<<pt.y<<" "<<"("<<space.GetRspacePoint(pt)[0]<<","<<space.GetRspacePoint(pt)[1]<<")\t";
-//        }
-//        cout<<endl;
-//        
-//        for (auto pt : poly.locs)
-//        {
-//            cout<<pt.x<<" "<<pt.y<<" "<<"("<<space.GetRspacePoint(pt)[0]<<","<<space.GetRspacePoint(pt)[1]<<")\t";
-//        }
-//        cout<<endl;
-        
-        
-        
-        
-        
-//        cout<<"To: "<<endl;
-//        for (auto pt : space.Sims[epyc1id].locs)
-//        {
-//            cout<<pt.x<<" "<<pt.y<<" "<<"("<<space.GetRspacePoint(pt)[0]<<","<<space.GetRspacePoint(pt)[1]<<")\t";
-//        }
-//        cout<<endl;
-//        
-//        for (auto pt : space.Sims[epyc2id].locs)
-//        {
-//            cout<<pt.x<<" "<<pt.y<<" "<<"("<<space.GetRspacePoint(pt)[0]<<","<<space.GetRspacePoint(pt)[1]<<")\t";
-//        }
-//        cout<<endl;
-//        
-//        for (auto pt : poly.locs)
-//        {
-//            cout<<pt.x<<" "<<pt.y<<" "<<"("<<space.GetRspacePoint(pt)[0]<<","<<space.GetRspacePoint(pt)[1]<<")\t";
-//        }
-//        cout<<endl;
-//        
-//        for (auto pt : space.Sims[epyc1id].locs)
-//        {
-//            assert(space.GetRspacePoint(pt)[0] == epyc1id);
-//        }
-//        
-//        for (auto pt : space.Sims[epyc2id].locs)
-//        {
-//            assert(space.GetRspacePoint(pt)[0] == epyc2id);
-//        }
-//        
-//        for (auto pt : poly.locs)
-//        {
-//            assert(space.GetRspacePoint(pt)[0] == polyid);
-//        }
-        
+        succ ++;        
         return true;
     }
     else
@@ -420,38 +361,6 @@ TriMoveInfo<P> RubiMove<S,P,M>::CleanUpTheTriMove(int rubiscoid, int epyc1id, in
             result.rubiscoinbond.push_back(i);
         }
     }
-    
-    //This code is to test consistency
-//    std::set<tuple<int, int>> before_epyc, before_rubisco, after_epyc, after_rubisco;
-//    for (auto pt : space.Sims[result.epyc1id].locs)
-//    {
-//        before_epyc.insert(std::make_tuple(pt.x, pt.y));
-//    }
-//    for (auto pt : space.Sims[result.epyc2id].locs)
-//    {
-//        before_epyc.insert(std::make_tuple(pt.x, pt.y));
-//    }
-//    for (auto pt : space.Sumos[result.rubiscoid].locs)
-//    {
-//        before_rubisco.insert(std::make_tuple(pt.x, pt.y));
-//    }
-//    assert(before_epyc == before_rubisco);
-//    
-//    for (auto pt : result.epyc1newpoints)
-//    {
-//        after_epyc.insert(std::make_tuple(pt.x, pt.y));
-//    }
-//    for (auto pt : result.epyc2newpoints)
-//    {
-//        after_epyc.insert(std::make_tuple(pt.x, pt.y));
-//    }
-//    for (auto pt : result.rubisconewpoints)
-//    {
-//        after_rubisco.insert(std::make_tuple(pt.x, pt.y));
-//    }
-//    assert(after_epyc == after_rubisco);
-//    
-//    cout<<"built trimove, no problem"<<endl;
     
     return result;
     
