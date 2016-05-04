@@ -81,5 +81,16 @@ public:
     Polymer(){}
 };
 
+template <class P>
+struct DragMoveInfo
+{
+    vector<int> rubiscoIDs;
+    vector<int> epycIDs;
+    vector<vector<P>> rubiscoNewPoints;
+    vector<vector<P>> epycNewPoints;
+    vector<vector<int>> rubiscoInBondIDs;
+};
+
+
 
 #endif /* position_h */

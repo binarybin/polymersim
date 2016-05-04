@@ -75,8 +75,8 @@ public:
                 app.Proceed('r');
                 if (app.test_tube.LSim*2 <= app.test_tube.LSumo)
                 {
-                    app.Proceed('T');
-                    app.Proceed('R');
+              //      app.Proceed('T');
+              //      app.Proceed('R');
                 }
                 
                 

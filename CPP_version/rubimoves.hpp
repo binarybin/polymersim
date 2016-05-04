@@ -30,17 +30,6 @@ using std::mt19937;
 using std::uniform_int_distribution;
 using std::generate_canonical;
 
-template<class P> struct TriMoveInfo
-{
-    int rubiscoid;
-    int epyc1id;
-    int epyc2id;
-    vector<P> rubisconewpoints;
-    vector<P> epyc1newpoints;
-    vector<P> epyc2newpoints;
-    vector<int> rubiscoinbond;
-};
-
 template <class S, class P, class M> class RubiMove
 {
 private:
@@ -61,12 +50,10 @@ public:
     void ClearSucc(){succ=0;}
     int GetSucc(){return succ;}
     
-    tuple<bool, int> ExecMove(int polyid, char polytyp);
-    bool ExecTriMove(int polyid);
-    
     void SetBeta(double setbeta)  {beta = setbeta;}
     void SetGamma(double setgamma) {gamma = setgamma;}
     
+    tuple<bool, int> ExecMove(int polyid, char polytyp);
     vector<P> ChooseMove(vector<vector<P>> possible_moves)
     {
         uniform_int_distribution<> dis(0, (int)possible_moves.size()-1);
@@ -77,10 +64,6 @@ public:
     
     double Weight(int nbr_bond_inc, int nbr_ps_inc) {return exp(nbr_bond_inc * beta - nbr_ps_inc * gamma);}
     
-    tuple<bool, int, int> IsATrimerState(int rubiscoid);
-    TriMoveInfo<P> CleanUpTheTriMove(int rubiscoid, int epyc1id, int epyc2id, vector<P> new_rubisco_points);
-    vector<vector<P>> FilterForTriMoves(vector<vector<P>> possible_moves, int epyc1id, int epyc2id);
-    
     void UpdateReverseCheckingSpace(vector<P>& oldpoints, vector<P> newpoints)
     {
         int polyid = space.GetRspacePoint(oldpoints[0])[0];
@@ -90,22 +73,6 @@ public:
         
         for (int i = 0; i < newpoints.size(); i++)
             space.SetRspacePoint(newpoints[i], polyid, i);
-    }
-    void UpdateReverseCheckingSpaceEpycCoMove(vector<P>& oldpoints1, vector<P> newpoints1, vector<P>& oldpoints2, vector<P> newpoints2)
-    {
-        int polyid1 = space.GetRspacePoint(oldpoints1[0])[0];
-        int polyid2 = space.GetRspacePoint(oldpoints2[0])[0];
-        
-        for (auto oldpt: oldpoints1)
-            space.SetRspacePoint(oldpt, NOBOND, NOBOND);
-        
-        for (auto oldpt: oldpoints2)
-            space.SetRspacePoint(oldpt, NOBOND, NOBOND);
-        
-        for (int i = 0; i < newpoints1.size(); i++)
-            space.SetRspacePoint(newpoints1[i], polyid1, i);
-        for (int i = 0; i < newpoints2.size(); i++)
-            space.SetRspacePoint(newpoints2[i], polyid2, i);
     }
     
     void BuildNewBonds(vector<P> newpoints, vector<int> bond_id_list)
@@ -131,8 +98,31 @@ public:
     }
     int ComputePSIncCrossLayer(Polymer<P> poly, vector<P> newpoints, int polyid);
     int ComputePSIncSameLayer(Polymer<P> poly, vector<P> newpoints, int polyid);
-    int ComputePSIncTriSameLayer(TriMoveInfo<P>& the_trimove);
-    int ComputePSIncTriCrossLayer(TriMoveInfo<P>& the_trimove);
+    
+    
+    
+    //TO BE MODIFIED
+    
+    bool ExecDragMove(int polyid);
+    void UpdateReverseCheckingSpaceDragMove(vector<P>& oldpoints1, vector<P> newpoints1, vector<P>& oldpoints2, vector<P> newpoints2)
+    {
+        int polyid1 = space.GetRspacePoint(oldpoints1[0])[0];
+        int polyid2 = space.GetRspacePoint(oldpoints2[0])[0];
+        
+        for (auto oldpt: oldpoints1)
+            space.SetRspacePoint(oldpt, NOBOND, NOBOND);
+        
+        for (auto oldpt: oldpoints2)
+            space.SetRspacePoint(oldpt, NOBOND, NOBOND);
+        
+        for (int i = 0; i < newpoints1.size(); i++)
+            space.SetRspacePoint(newpoints1[i], polyid1, i);
+        for (int i = 0; i < newpoints2.size(); i++)
+            space.SetRspacePoint(newpoints2[i], polyid2, i);
+    }
+
+    int ComputePSIncDragSameLayer(TriMoveInfo<P>& the_trimove);
+    int ComputePSIncDragCrossLayer(TriMoveInfo<P>& the_trimove);
 };
 
 
@@ -180,191 +170,6 @@ tuple<bool, int> RubiMove<S, P, M>::ExecMove(int polyid, char polytyp)
     }
     else
         return make_tuple(false, nbr_bond_inc);
-}
-
-
-template <class S, class P, class M>
-bool RubiMove<S, P, M>::ExecTriMove(int polyid)
-{
-    Polymer<P>& poly = space.Sumos[polyid];
-    
-    bool is_trimer; int epyc1id; int epyc2id;
-    tie(is_trimer, epyc1id, epyc2id) = IsATrimerState(polyid);
-    if (!is_trimer) return false; // The state is not a trimer, no move
-    
-    auto possible_moves = FilterForTriMoves(move.GetPossibleMoves(poly, polyid), epyc1id, epyc2id);
-    
-    if (possible_moves.empty()) return false; // No available move for the trimer, no move
-    
-    auto newpoints = ChooseMove(possible_moves); // Choose the target points of the rubisco
-    
-    TriMoveInfo<P> tri_move_info = CleanUpTheTriMove(polyid, epyc1id, epyc2id, newpoints); // Based on those info, determine the move details
-    
-    int nbr_ps_inc = ComputePSIncTriSameLayer(tri_move_info) + ComputePSIncTriCrossLayer(tri_move_info);
-    
-    if (generate_canonical<double, 10>(gen) < Weight(0, nbr_ps_inc))
-    {
-        for (auto oldpoint : poly.locs)
-        {
-            assert(!space.EmptyPos(oldpoint));
-            space.SafeRemove(oldpoint);
-        }
-        
-        for (auto newpoint : tri_move_info.rubisconewpoints)
-        {
-            assert(space.EmptyPos(newpoint));
-            space.SafeCreate(newpoint, -1);
-        }
-        
-        
-        for (auto oldpoint : space.Sims[epyc1id].locs)
-        {
-            assert(!space.EmptyPos(oldpoint));
-            space.SafeRemove(oldpoint);
-        }
-        
-        for (auto oldpoint : space.Sims[epyc2id].locs)
-        {
-            assert(!space.EmptyPos(oldpoint));
-            space.SafeRemove(oldpoint);
-        }
-        
-        for (auto newpoint : tri_move_info.epyc1newpoints)
-        {
-            assert(space.EmptyPos(newpoint));
-            space.SafeCreate(newpoint, 1);
-        }
-        
-        for (auto newpoint : tri_move_info.epyc2newpoints)
-        {
-            assert(space.EmptyPos(newpoint));
-            space.SafeCreate(newpoint, 1);
-        }
-        
-        for (auto pt : space.Sims[epyc1id].locs)
-        {
-            assert(space.GetRspacePoint(pt)[0] == epyc1id);
-        }
-        
-        for (auto pt : space.Sims[epyc2id].locs)
-        {
-            assert(space.GetRspacePoint(pt)[0] == epyc2id);
-        }
-        
-        for (auto pt : poly.locs)
-        {
-            assert(space.GetRspacePoint(pt)[0] == polyid);
-        }
-        UpdateReverseCheckingSpace(poly.locs, tri_move_info.rubisconewpoints);
-        UpdateReverseCheckingSpaceEpycCoMove(space.Sims[epyc1id].locs, tri_move_info.epyc1newpoints, space.Sims[epyc2id].locs, tri_move_info.epyc2newpoints);
-        
-        poly.locs = tri_move_info.rubisconewpoints;
-        space.Sims[epyc1id].locs = tri_move_info.epyc1newpoints;
-        space.Sims[epyc2id].locs = tri_move_info.epyc2newpoints;
-        
-        
-        
-        BuildNewBonds(tri_move_info.rubisconewpoints, tri_move_info.rubiscoinbond);
-        succ ++;        
-        return true;
-    }
-    else
-        return false;
-}
-
-
-template <class S, class P, class M>
-tuple<bool, int, int> RubiMove<S,P,M>::IsATrimerState(int rubiscoid)//use the simplist creteria: two epycs, full overlap
-{
-    std::unordered_map<int, vector<int>> epycids;
-    
-    for (auto point : space.Sumos[rubiscoid].locs)
-    {
-        int epycid = space.GetRspacePoint(space.BondNeighbor(point)[0])[0];
-        if (epycid != NOBOND)
-            epycids[epycid].push_back(1);
-    }
-    
-    vector<int> epids;
-    
-    for (auto epycid : epycids)
-    {
-        if (epycid.second.size() != 4)
-        {
-            return make_tuple(false, 0, 0);
-        }
-        epids.push_back(epycid.first);
-    }
-    
-    if (epids.size() != 2)
-    {
-        return make_tuple(false, 0, 0);
-    }
-    
-    return make_tuple(true, epids[0], epids[1]);
-}
-
-template <class S, class P, class M>
-vector<vector<P>> RubiMove<S,P,M>::FilterForTriMoves(vector<vector<P>> possible_moves, int epyc1id, int epyc2id)
-{
-    vector<vector<P>> result;
-    for (vector<P> newpoints : possible_moves)
-    {
-        bool good = true;
-        for (P newpoint : newpoints)
-        {
-            int newepycid = space.GetRspacePoint(space.BondNeighbor(newpoint)[0])[0];
-            if (newepycid != NOBOND && newepycid != epyc1id && newepycid != epyc2id) // The new point is occupied by an epyc other than epyc1 and epyc2
-                good = false;
-        }
-        if (good)
-            result.push_back(newpoints);
-    }
-    return result;
-}
-
-template <class S, class P, class M>
-TriMoveInfo<P> RubiMove<S,P,M>::CleanUpTheTriMove(int rubiscoid, int epyc1id, int epyc2id, vector<P> new_rubisco_points)
-{
-    TriMoveInfo<P> result;
-    
-    result.epyc1id = epyc1id;
-    result.epyc2id = epyc2id;
-    result.rubiscoid = rubiscoid;
-    result.rubisconewpoints = new_rubisco_points;
-    
-    
-    for (auto pointepyc : space.Sims[result.epyc1id].locs)
-    {
-        auto pos_rubi = space.GetRspacePoint(space.BondNeighbor(pointepyc)[0])[1];
-        auto rubitestid = space.GetRspacePoint(space.BondNeighbor(pointepyc)[0])[0];
-        assert(rubitestid == rubiscoid);
-        assert(pos_rubi >= 0 && pos_rubi<space.LSumo);
-        auto new_epyc_point = space.BondNeighbor(new_rubisco_points[pos_rubi])[0];
-        result.epyc1newpoints.push_back(new_epyc_point);
-    }
-    
-    for (auto pointepyc : space.Sims[result.epyc2id].locs)
-    {
-        auto pos_rubi = space.GetRspacePoint(space.BondNeighbor(pointepyc)[0])[1];
-        auto rubitestid = space.GetRspacePoint(space.BondNeighbor(pointepyc)[0])[0];
-        assert(rubitestid == rubiscoid);
-        assert(pos_rubi >= 0 && pos_rubi<space.LSumo);
-        auto new_epyc_point = space.BondNeighbor(new_rubisco_points[pos_rubi])[0];
-        result.epyc2newpoints.push_back(new_epyc_point);
-    }
-    
-    for (int i = 0; i < space.LSumo; i++)
-    {
-        if (space.InABond(space.Sumos[rubiscoid].locs[i]))
-        {
-            result.rubiscoinbond.push_back(i);
-        }
-    }
-    
-    return result;
-    
-    
 }
 
 template <class S, class P, class M>
@@ -508,6 +313,98 @@ int RubiMove<S,P,M>::ComputePSIncSameLayer(Polymer<P> poly, vector<P> newpoints,
     return new_nbr_ps - old_nbr_ps;
 }
 
+
+
+// To be modified
+
+template <class S, class P, class M>
+bool RubiMove<S, P, M>::ExecDragMove(int polyid)
+{
+    Polymer<P>& poly = space.Sumos[polyid];
+    
+    bool is_trimer; int epyc1id; int epyc2id;
+    tie(is_trimer, epyc1id, epyc2id) = IsATrimerState(polyid);
+    if (!is_trimer) return false; // The state is not a trimer, no move
+    
+    auto possible_moves = FilterForTriMoves(move.GetPossibleMoves(poly, polyid), epyc1id, epyc2id);
+    
+    if (possible_moves.empty()) return false; // No available move for the trimer, no move
+    
+    auto newpoints = ChooseMove(possible_moves); // Choose the target points of the rubisco
+    
+    TriMoveInfo<P> tri_move_info = CleanUpTheTriMove(polyid, epyc1id, epyc2id, newpoints); // Based on those info, determine the move details
+    
+    int nbr_ps_inc = ComputePSIncTriSameLayer(tri_move_info) + ComputePSIncTriCrossLayer(tri_move_info);
+    
+    if (generate_canonical<double, 10>(gen) < Weight(0, nbr_ps_inc))
+    {
+        for (auto oldpoint : poly.locs)
+        {
+            assert(!space.EmptyPos(oldpoint));
+            space.SafeRemove(oldpoint);
+        }
+        
+        for (auto newpoint : tri_move_info.rubisconewpoints)
+        {
+            assert(space.EmptyPos(newpoint));
+            space.SafeCreate(newpoint, -1);
+        }
+        
+        
+        for (auto oldpoint : space.Sims[epyc1id].locs)
+        {
+            assert(!space.EmptyPos(oldpoint));
+            space.SafeRemove(oldpoint);
+        }
+        
+        for (auto oldpoint : space.Sims[epyc2id].locs)
+        {
+            assert(!space.EmptyPos(oldpoint));
+            space.SafeRemove(oldpoint);
+        }
+        
+        for (auto newpoint : tri_move_info.epyc1newpoints)
+        {
+            assert(space.EmptyPos(newpoint));
+            space.SafeCreate(newpoint, 1);
+        }
+        
+        for (auto newpoint : tri_move_info.epyc2newpoints)
+        {
+            assert(space.EmptyPos(newpoint));
+            space.SafeCreate(newpoint, 1);
+        }
+        
+        for (auto pt : space.Sims[epyc1id].locs)
+        {
+            assert(space.GetRspacePoint(pt)[0] == epyc1id);
+        }
+        
+        for (auto pt : space.Sims[epyc2id].locs)
+        {
+            assert(space.GetRspacePoint(pt)[0] == epyc2id);
+        }
+        
+        for (auto pt : poly.locs)
+        {
+            assert(space.GetRspacePoint(pt)[0] == polyid);
+        }
+        UpdateReverseCheckingSpace(poly.locs, tri_move_info.rubisconewpoints);
+        UpdateReverseCheckingSpaceEpycCoMove(space.Sims[epyc1id].locs, tri_move_info.epyc1newpoints, space.Sims[epyc2id].locs, tri_move_info.epyc2newpoints);
+        
+        poly.locs = tri_move_info.rubisconewpoints;
+        space.Sims[epyc1id].locs = tri_move_info.epyc1newpoints;
+        space.Sims[epyc2id].locs = tri_move_info.epyc2newpoints;
+        
+        
+        
+        BuildNewBonds(tri_move_info.rubisconewpoints, tri_move_info.rubiscoinbond);
+        succ ++;
+        return true;
+    }
+    else
+        return false;
+}
 
 template <class S, class P, class M>
 int RubiMove<S,P,M>::ComputePSIncTriSameLayer(TriMoveInfo<P>& the_trimove)
