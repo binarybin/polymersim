@@ -16,6 +16,7 @@
 #include <map>
 #include <cstdlib>
 #include <set>
+#include <deque>
 #include <algorithm>
 #include "position.h"
 using std::tuple;
@@ -57,8 +58,8 @@ public:
         if(oldpt.y < refpt.y - space.LSim - 1) oldpt.y += space.Ly;
         if(oldpt.x > refpt.x + space.LSim + 1) oldpt.x -= space.Lx;
         if(oldpt.y > refpt.y + space.LSim + 1) oldpt.y -= space.Ly;
-        assert(abs(oldpt.x - refpt.x) < space.LSim + 3);
-        assert(abs(oldpt.y - refpt.y) < space.LSim + 3);
+   //     assert(abs(oldpt.x - refpt.x) < space.LSim + 3);
+   //     assert(abs(oldpt.y - refpt.y) < space.LSim + 3);
         
         P newpt;
         newpt.siml = oldpt.siml; //I don't care about the refpt's layer
@@ -152,7 +153,8 @@ public:
         for (int i = 1; i < 3; i++)
         {
             DragMoveInfo<P> the_move;
-            
+            the_move.rubiscoIDs = rubiscoIDs;
+            the_move.epycIDs = epycIDs;
             for (int epycID : epycIDs)
             {
                 vector<P> epycNewPoints;
@@ -175,8 +177,8 @@ public:
             }
             if (!PassDragMoveLayerFilter(the_move, 'r'))  continue;
             
-            the_move.rubiscoIDs = rubiscoIDs;
-            the_move.epycIDs = epycIDs;
+            
+            
             the_move.rubiscoInBondIDs = rubiscoInBondIDs;
             possible_moves.push_back(the_move);
         }
@@ -186,6 +188,7 @@ public:
     {
         auto NewPoints = (layer == 'e')? dragmove.epycNewPoints : dragmove.rubiscoNewPoints;
         auto IDs = (layer == 'e')? dragmove.epycIDs : dragmove.rubiscoIDs;
+        
         for (auto new_pts : NewPoints)
         {
             for (auto newpt : new_pts)
@@ -227,6 +230,95 @@ public:
         P refpt = GetRefPoint(rubiscoID);
         
         return GetPossibleMultipleMoves(rubiscoIDs, epycIDs, refpt);
+    }
+    
+    vector<DragMoveInfo<P>> GetPossibleBlobMoves(int rubiscoID)
+    {
+        std::map<int, int> rubiTable;
+        std::map<int, int> epycTable;
+        std::deque<pair<int, bool>> tasks;
+        tasks.push_back(std::make_pair(rubiscoID, false));
+        rubiTable[rubiscoID] = 1;
+        // Get the lists of rubiscos and epycs involved
+        while (!tasks.empty())
+        {
+            auto task = tasks.front();
+            tasks.pop_front();
+            const vector<P>& pts = (task.second ? space.Sims[task.first].locs : space.Sumos[task.second].locs);
+            for (const auto & pt : pts)
+            {
+                bool newType = !task.second;
+                int linked_to_id = space.GetRspacePoint(space.BondNeighbor(pt)[0])[0];
+                if (linked_to_id != NOBOND)
+                {
+                    auto& Table = (newType ? epycTable : rubiTable);
+                    if (Table[linked_to_id] == 0)
+                    {
+                        Table[linked_to_id] = 1;
+                        tasks.push_back(std::make_pair(linked_to_id, newType));
+                    }
+                }
+            }
+        }
+        
+        // Copy the involved rubiscos and epycs to their lists
+        vector<int> rubis;
+        for (auto a_pair : rubiTable)
+            if (a_pair.second == 1) rubis.push_back(a_pair.first);
+        
+        vector<int> epycs;
+        for (auto a_pair : epycTable)
+            if (a_pair.second == 1) epycs.push_back(a_pair.first);
+        
+        vector<DragMoveInfo<P>> the_result;
+        
+        
+        // Check if there is a cycle
+        // A cycle will make rotation ambiguous
+        // So we don't like it
+        std::map<int, int> x_occ, y_occ;
+        for (auto rubiid : rubis)
+        {
+            for (auto pt : space.Sumos[rubiid].locs)
+            {
+                x_occ[pt.x] = 1;
+                y_occ[pt.x] = 1;
+            }
+        }
+        
+        for (auto epycid : epycs)
+        {
+            for (auto pt : space.Sims[epycid].locs)
+            {
+                x_occ[pt.x] = 1;
+                y_occ[pt.x] = 1;
+            }
+        }
+        bool x_cycle = true, y_cycle = true;
+        for (int x = 0; x<space.Lx; x++)
+        {
+            if (x_occ[x] != 1) x_cycle = false;
+        }
+        for (int y = 0; y<space.Ly; y++)
+        {
+            if (y_occ[y] != 1) y_cycle = false;
+        }
+        if (x_cycle || y_cycle)
+        {
+            return the_result;
+        }
+        
+        
+        // Now we just push them into the GetPossibleMultipleMoves function
+        // to get rotations around different points
+        for (auto rubiid : rubis)
+        {
+            P refpt = GetRefPoint(rubiid);
+            auto moves_one_point = GetPossibleMultipleMoves(rubis, epycs, refpt);
+            the_result.insert( the_result.end(), moves_one_point.begin(), moves_one_point.end() );
+        }
+        
+        return the_result;
     }
     
 };

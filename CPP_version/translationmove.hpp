@@ -12,6 +12,7 @@
 #include <tuple>
 #include <vector>
 #include <cassert>
+#include <deque>
 
 using std::tuple;
 using std::vector;
@@ -123,7 +124,8 @@ public:
         for (int i = 1; i < 4; i++)
         {
             DragMoveInfo<P> the_move;
-            
+            the_move.rubiscoIDs = rubiscoIDs;
+            the_move.epycIDs = epycIDs;
             for (int epycID : epycIDs)
             {
                 vector<P> epycNewPoints;
@@ -146,8 +148,8 @@ public:
             }
             if (!PassDragMoveLayerFilter(the_move, 'r'))  continue;
             
-            the_move.rubiscoIDs = rubiscoIDs;
-            the_move.epycIDs = epycIDs;
+            
+            
             the_move.rubiscoInBondIDs = rubiscoInBondIDs;
             possible_moves.push_back(the_move);
         }
@@ -157,6 +159,7 @@ public:
     {
         auto NewPoints = (layer == 'e')? dragmove.epycNewPoints : dragmove.rubiscoNewPoints;
         auto IDs = (layer == 'e')? dragmove.epycIDs : dragmove.rubiscoIDs;
+         
         for (auto new_pts : NewPoints)
         {
             for (auto newpt : new_pts)
@@ -176,8 +179,11 @@ public:
                 }
             }
         }
+        
+        
         return true;
     }
+    
     vector<DragMoveInfo<P>> GetPossibleDragMoves(int rubiscoID)
     {
         vector<int> rubiscoIDs;
@@ -197,6 +203,44 @@ public:
         P refpt;
         
         return GetPossibleMultipleMoves(rubiscoIDs, epycIDs, refpt);
+    }
+    vector<DragMoveInfo<P>> GetPossibleBlobMoves(int rubiscoID)
+    {
+        std::map<int, int> rubiTable;
+        std::map<int, int> epycTable;
+        std::deque<pair<int, bool>> tasks;
+        tasks.push_back(std::make_pair(rubiscoID, false));
+        rubiTable[rubiscoID] = 1;
+        while (!tasks.empty())
+        {
+            auto task = tasks.front();
+            tasks.pop_front();
+            const vector<P>& pts = (task.second ? space.Sims[task.first].locs : space.Sumos[task.second].locs);
+            for (const auto & pt : pts)
+            {
+                int linked_to_id = space.GetRspacePoint(space.BondNeighbor(pt)[0])[0];
+                bool newType = !task.second;
+                if (linked_to_id != NOBOND)
+                {
+                    auto& Table = (newType ? epycTable : rubiTable);
+                    if (Table[linked_to_id] == 0)
+                    {
+                        Table[linked_to_id] = 1;
+                        tasks.push_back(std::make_pair(linked_to_id, newType));
+                    }
+                }
+            }
+        }
+        vector<int> rubis;
+        for (auto a_pair : rubiTable)
+            if (a_pair.second == 1) rubis.push_back(a_pair.first);
+        
+        vector<int> epycs;
+        for (auto a_pair : epycTable)
+            if (a_pair.second == 1) epycs.push_back(a_pair.first);
+        
+        P refpt;
+        return GetPossibleMultipleMoves(rubis, epycs, refpt);
     }
 
 };

@@ -45,7 +45,7 @@ public:
     {
         app.Initialize();
         ofstream r_out(raw_filename + "_running.txt");
-        r_out<<"beta\t"<<"gamma\t"<<"S_succ\t"<<"E_succ\t"<<"C_succ\t"<<"T_succ\t"<<"R_succ\t"<<"CT_succ\t"<<"CR_succ\t"<<"energy"<<endl;
+        r_out<<"beta\t"<<"gamma\t"<<"S_succ\t"<<"E_succ\t"<<"C_succ\t"<<"T_succ\t"<<"R_succ\t"<<"CT_succ\t"<<"CR_succ\t"<<"BT_succ\t"<<"BR_succ\t"<<"energy"<<endl;
         for (auto task : tasklist)
         {
             int idx = std::get<0>(task);
@@ -66,6 +66,8 @@ public:
             app.ResetMoveSucc('r');
             app.ResetMoveSucc('T');
             app.ResetMoveSucc('R');
+            app.ResetMoveSucc('X');
+            app.ResetMoveSucc('Y');
             for(int i = 1; i < runs+1; i++)
             {
                 app.Proceed('s');
@@ -75,6 +77,8 @@ public:
                 app.Proceed('r');
                 app.Proceed('T');
                 app.Proceed('R');
+                app.Proceed('X');
+                app.Proceed('Y');
                 
                 
                 if (i % (runs/10000) == 0)
@@ -87,6 +91,8 @@ public:
                     r_out<<app.ResetMoveSucc('r')<<"\t";
                     r_out<<app.ResetMoveSucc('T')<<"\t";
                     r_out<<app.ResetMoveSucc('R')<<"\t";
+                    r_out<<app.ResetMoveSucc('X')<<"\t";
+                    r_out<<app.ResetMoveSucc('Y')<<"\t";
                     r_out<<app.GetEnergy()<<endl;
                 }
             }

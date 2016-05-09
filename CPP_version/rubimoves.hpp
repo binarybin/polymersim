@@ -109,7 +109,7 @@ public:
     int ComputePSIncSameLayer(Polymer<P> poly, vector<P> newpoints, int polyid);
     
     
-    bool ExecDragMove(int polyid);
+    bool ExecDragMove(int polyid, bool blob);
     void UpdateRealSpaceDrag(DragMoveInfo<P>& the_move);
     void UpdateRSpaceDrag(DragMoveInfo<P>& the_move);
     void UpdatePolymersDrag(DragMoveInfo<P>& the_move);
@@ -306,9 +306,19 @@ int RubiMove<S,P,M>::ComputePSIncSameLayer(Polymer<P> poly, vector<P> newpoints,
 }
 
 template <class S, class P, class M>
-bool RubiMove<S, P, M>::ExecDragMove(int polyid)
+bool RubiMove<S, P, M>::ExecDragMove(int polyid, bool blob)
 {
-    vector<DragMoveInfo<P>> possible_moves = move.GetPossibleDragMoves(polyid);
+    vector<DragMoveInfo<P>> possible_moves;
+    if (blob)
+    {
+        possible_moves = move.GetPossibleBlobMoves(polyid);
+    }
+    else
+    {
+        possible_moves = move.GetPossibleDragMoves(polyid);
+    }
+    
+    
     
     if (possible_moves.empty()) return false; // No available move for the trimer, no move
     
@@ -316,6 +326,7 @@ bool RubiMove<S, P, M>::ExecDragMove(int polyid)
     
     auto nbr_ps_inc_pair = ComputePSIncDrag(the_move);
     int nbr_ps_inc = nbr_ps_inc_pair.first + nbr_ps_inc_pair.second;
+    
     
     if (generate_canonical<double, 10>(gen) < Weight(0, nbr_ps_inc))
     {
@@ -429,34 +440,6 @@ void RubiMove<S, P, M>::BuildNewBondsDrag(DragMoveInfo<P>& the_move)
     }
 }
 
-// To be modified
-
-/*template <class S, class P, class M>
-bool RubiMove<S, P, M>::PredictEmptyPoint(DragMoveInfo<P>& the_move, P& point, bool siml)
-{
-    const vector<int>& polyids = (siml? the_move.epycIDs : the_move.rubiscoIDs);
-    const vector<vector<P>>& polyNewPts = (siml? the_move.epycNewPoints : the_move.rubiscoNewPoints);
-    int nbptID = space.GetRspacePoint(point)[0];
-    
-    // If that point is occupied by a polymer that is not to be moved
-    // Then that point is surely occupied by a polymer after the move
-    // Thus the whole function returns false
-    bool pointOccByUnmoved = true;
-    if (nbptID == NOBOND)
-        pointOccByUnmoved = false;
-    else
-        for (auto polyid : polyids)
-            if (polyid == nbptID)
-                pointOccByUnmoved = false;
-    
-    if (pointOccByUnmoved) return false;
-    
-    // If that point is not occupied by any polymer or is currently
-    // occupied by a polymer that is to be moved to new positions
-    // we need to check if that point is to be filled
-    
-
-}*/
 
 template <class S, class P, class M>
 pair<int, int> RubiMove<S,P,M>::ComputePSIncDrag(DragMoveInfo<P>& the_move)
@@ -608,3 +591,35 @@ pair<int, int> RubiMove<S,P,M>::ComputePSIncDrag(DragMoveInfo<P>& the_move)
 
 
 #endif /* rubimoves_hpp */
+
+
+
+// To be modified
+
+/*template <class S, class P, class M>
+ bool RubiMove<S, P, M>::PredictEmptyPoint(DragMoveInfo<P>& the_move, P& point, bool siml)
+ {
+ const vector<int>& polyids = (siml? the_move.epycIDs : the_move.rubiscoIDs);
+ const vector<vector<P>>& polyNewPts = (siml? the_move.epycNewPoints : the_move.rubiscoNewPoints);
+ int nbptID = space.GetRspacePoint(point)[0];
+ 
+ // If that point is occupied by a polymer that is not to be moved
+ // Then that point is surely occupied by a polymer after the move
+ // Thus the whole function returns false
+ bool pointOccByUnmoved = true;
+ if (nbptID == NOBOND)
+ pointOccByUnmoved = false;
+ else
+ for (auto polyid : polyids)
+ if (polyid == nbptID)
+ pointOccByUnmoved = false;
+ 
+ if (pointOccByUnmoved) return false;
+ 
+ // If that point is not occupied by any polymer or is currently
+ // occupied by a polymer that is to be moved to new positions
+ // we need to check if that point is to be filled
+ 
+ 
+ }*/
+
