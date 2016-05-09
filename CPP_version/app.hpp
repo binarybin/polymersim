@@ -495,10 +495,10 @@ void App<S,P>::Proceed(char typ)
             break;
             
         case 'T':
-            Tm.ExecTriMove(id_r);
+            Tm.ExecDragMove(id_r);
             break;
         case 'R':
-            Rm.ExecTriMove(id_r);
+            Rm.ExecDragMove(id_r);
             break;
             
         default:

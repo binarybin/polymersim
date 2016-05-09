@@ -256,7 +256,7 @@ public:
     
     void SetSpacePoint(Pos2d2l& point, int val)
     {
-        space[point.siml?0:1][point.x][point.y];
+        space[point.siml?0:1][point.x][point.y] = val;
     }
 
     void MoveTogether(Pos2d2l& oldpoint, Pos2d2l& newpoint)

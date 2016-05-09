@@ -68,9 +68,44 @@ public:
         return true;
     }
     
+    bool TouchedOtherPolymers(const vector<int>& rubiscoIDs, const vector<int>& epycIDs)
+    {
+        for (auto rubiID : rubiscoIDs)
+        {
+            for (auto rubiPT : space.Sumos[rubiID].locs)
+            {
+                int correspondingID = space.GetRspacePoint(space.BondNeighbor(rubiPT)[0])[0];
+                if (correspondingID == NOBOND) continue;
+                bool danger = true;
+                for (auto epycID : epycIDs)
+                    if (epycID == correspondingID) danger = false;
+                if (danger)
+                    return true;
+            }
+        }
+        
+        for (auto epycID : epycIDs)
+        {
+            for (auto epycPT : space.Sims[epycID].locs)
+            {
+                int correspondingID = space.GetRspacePoint(space.BondNeighbor(epycPT)[0])[0];
+                if (correspondingID == NOBOND) continue;
+                bool danger = true;
+                for (auto rubiID : rubiscoIDs)
+                    if (rubiID == correspondingID) danger = false;
+                if (danger)
+                    return true;
+            }
+        }
+        return false;
+    }
+
     vector<DragMoveInfo<P>> GetPossibleMultipleMoves(const vector<int>& rubiscoIDs, const vector<int>& epycIDs, const P& refpt)
     {
         vector<DragMoveInfo<P>> possible_moves;
+        
+        if (TouchedOtherPolymers(rubiscoIDs, epycIDs))
+            return possible_moves;
         
         vector<vector<int>> rubiscoInBondIDs;
         for (int rubiscoID : rubiscoIDs)

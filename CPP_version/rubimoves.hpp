@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <stdexcept>
 #include <tuple>
+#include <utility>
 #include <random>
 #include <set>
 #include <algorithm>
@@ -62,6 +63,14 @@ public:
         return possible_moves[id];
     }
     
+    DragMoveInfo<P> ChooseMove(vector<DragMoveInfo<P>> possible_moves)
+    {
+        uniform_int_distribution<> dis(0, (int)possible_moves.size()-1);
+        size_t id = dis(gen);
+        assert(id >= 0 && id < possible_moves.size());
+        return possible_moves[id];
+    }
+    
     double Weight(int nbr_bond_inc, int nbr_ps_inc) {return exp(nbr_bond_inc * beta - nbr_ps_inc * gamma);}
     
     void UpdateReverseCheckingSpace(vector<P>& oldpoints, vector<P> newpoints)
@@ -100,29 +109,12 @@ public:
     int ComputePSIncSameLayer(Polymer<P> poly, vector<P> newpoints, int polyid);
     
     
-    
-    //TO BE MODIFIED
-    
     bool ExecDragMove(int polyid);
-    void UpdateReverseCheckingSpaceDragMove(vector<P>& oldpoints1, vector<P> newpoints1, vector<P>& oldpoints2, vector<P> newpoints2)
-    {
-        int polyid1 = space.GetRspacePoint(oldpoints1[0])[0];
-        int polyid2 = space.GetRspacePoint(oldpoints2[0])[0];
-        
-        for (auto oldpt: oldpoints1)
-            space.SetRspacePoint(oldpt, NOBOND, NOBOND);
-        
-        for (auto oldpt: oldpoints2)
-            space.SetRspacePoint(oldpt, NOBOND, NOBOND);
-        
-        for (int i = 0; i < newpoints1.size(); i++)
-            space.SetRspacePoint(newpoints1[i], polyid1, i);
-        for (int i = 0; i < newpoints2.size(); i++)
-            space.SetRspacePoint(newpoints2[i], polyid2, i);
-    }
-
-    int ComputePSIncDragSameLayer(TriMoveInfo<P>& the_trimove);
-    int ComputePSIncDragCrossLayer(TriMoveInfo<P>& the_trimove);
+    void UpdateRealSpaceDrag(DragMoveInfo<P>& the_move);
+    void UpdateRSpaceDrag(DragMoveInfo<P>& the_move);
+    void UpdatePolymersDrag(DragMoveInfo<P>& the_move);
+    void BuildNewBondsDrag(DragMoveInfo<P>& the_move);
+    pair<int, int> ComputePSIncDrag(DragMoveInfo<P>& the_move);
 };
 
 
@@ -313,200 +305,306 @@ int RubiMove<S,P,M>::ComputePSIncSameLayer(Polymer<P> poly, vector<P> newpoints,
     return new_nbr_ps - old_nbr_ps;
 }
 
-
-
-// To be modified
-
 template <class S, class P, class M>
 bool RubiMove<S, P, M>::ExecDragMove(int polyid)
 {
-    Polymer<P>& poly = space.Sumos[polyid];
-    
-    bool is_trimer; int epyc1id; int epyc2id;
-    tie(is_trimer, epyc1id, epyc2id) = IsATrimerState(polyid);
-    if (!is_trimer) return false; // The state is not a trimer, no move
-    
-    auto possible_moves = FilterForTriMoves(move.GetPossibleMoves(poly, polyid), epyc1id, epyc2id);
+    vector<DragMoveInfo<P>> possible_moves = move.GetPossibleDragMoves(polyid);
     
     if (possible_moves.empty()) return false; // No available move for the trimer, no move
     
-    auto newpoints = ChooseMove(possible_moves); // Choose the target points of the rubisco
+    auto the_move = ChooseMove(possible_moves); // Choose the target points of the rubisco
     
-    TriMoveInfo<P> tri_move_info = CleanUpTheTriMove(polyid, epyc1id, epyc2id, newpoints); // Based on those info, determine the move details
-    
-    int nbr_ps_inc = ComputePSIncTriSameLayer(tri_move_info) + ComputePSIncTriCrossLayer(tri_move_info);
+    auto nbr_ps_inc_pair = ComputePSIncDrag(the_move);
+    int nbr_ps_inc = nbr_ps_inc_pair.first + nbr_ps_inc_pair.second;
     
     if (generate_canonical<double, 10>(gen) < Weight(0, nbr_ps_inc))
     {
-        for (auto oldpoint : poly.locs)
-        {
-            assert(!space.EmptyPos(oldpoint));
-            space.SafeRemove(oldpoint);
-        }
-        
-        for (auto newpoint : tri_move_info.rubisconewpoints)
-        {
-            assert(space.EmptyPos(newpoint));
-            space.SafeCreate(newpoint, -1);
-        }
-        
-        
-        for (auto oldpoint : space.Sims[epyc1id].locs)
-        {
-            assert(!space.EmptyPos(oldpoint));
-            space.SafeRemove(oldpoint);
-        }
-        
-        for (auto oldpoint : space.Sims[epyc2id].locs)
-        {
-            assert(!space.EmptyPos(oldpoint));
-            space.SafeRemove(oldpoint);
-        }
-        
-        for (auto newpoint : tri_move_info.epyc1newpoints)
-        {
-            assert(space.EmptyPos(newpoint));
-            space.SafeCreate(newpoint, 1);
-        }
-        
-        for (auto newpoint : tri_move_info.epyc2newpoints)
-        {
-            assert(space.EmptyPos(newpoint));
-            space.SafeCreate(newpoint, 1);
-        }
-        
-        for (auto pt : space.Sims[epyc1id].locs)
-        {
-            assert(space.GetRspacePoint(pt)[0] == epyc1id);
-        }
-        
-        for (auto pt : space.Sims[epyc2id].locs)
-        {
-            assert(space.GetRspacePoint(pt)[0] == epyc2id);
-        }
-        
-        for (auto pt : poly.locs)
-        {
-            assert(space.GetRspacePoint(pt)[0] == polyid);
-        }
-        UpdateReverseCheckingSpace(poly.locs, tri_move_info.rubisconewpoints);
-        UpdateReverseCheckingSpaceEpycCoMove(space.Sims[epyc1id].locs, tri_move_info.epyc1newpoints, space.Sims[epyc2id].locs, tri_move_info.epyc2newpoints);
-        
-        poly.locs = tri_move_info.rubisconewpoints;
-        space.Sims[epyc1id].locs = tri_move_info.epyc1newpoints;
-        space.Sims[epyc2id].locs = tri_move_info.epyc2newpoints;
-        
-        
-        
-        BuildNewBonds(tri_move_info.rubisconewpoints, tri_move_info.rubiscoinbond);
+        UpdateRealSpaceDrag(the_move);
+        UpdateRSpaceDrag(the_move);
+        UpdatePolymersDrag(the_move);
+        BuildNewBondsDrag(the_move);
         succ ++;
         return true;
     }
     else
         return false;
 }
-
 template <class S, class P, class M>
-int RubiMove<S,P,M>::ComputePSIncTriSameLayer(TriMoveInfo<P>& the_trimove)
+void RubiMove<S, P, M>::UpdateRealSpaceDrag(DragMoveInfo<P>& the_move)
 {
-    int ps_inc_rubisco = ComputePSIncSameLayer(space.Sumos[the_trimove.rubiscoid], the_trimove.rubisconewpoints, the_trimove.rubiscoid);
-    int ps_inc_onlyepyc1 = ComputePSIncSameLayer(space.Sims[the_trimove.epyc1id], the_trimove.epyc1newpoints, the_trimove.epyc1id);
-    int ps_inc_onlyepyc2 = ComputePSIncSameLayer(space.Sims[the_trimove.epyc2id], the_trimove.epyc2newpoints, the_trimove.epyc2id);
-    int ps_epycs_interface = 0;
-    for (auto newpoint : space.Sims[the_trimove.epyc1id].locs)
+    for (auto epycid : the_move.epycIDs)
     {
-        for (auto pt : space.Neighbor(newpoint))
+        for (auto oldpoint : space.Sims[epycid].locs)
         {
-            if (space.GetRspacePoint(pt)[0] == the_trimove.epyc2id)
-            {
-                ps_epycs_interface ++;
-            }
+            assert(!space.EmptyPos(oldpoint));
+            space.SafeRemove(oldpoint);
         }
     }
     
-    return ps_inc_rubisco + ps_inc_onlyepyc1 + ps_inc_onlyepyc2 - ps_epycs_interface;
+    for (const auto& epycnewpoints : the_move.epycNewPoints)
+    {
+        for (auto newpoint : epycnewpoints)
+        {
+            assert(space.EmptyPos(newpoint));
+            space.SafeCreate(newpoint, 1);
+        }
+    }
+    for (auto rubiid : the_move.rubiscoIDs)
+    {
+        for (auto oldpoint : space.Sumos[rubiid].locs)
+        {
+            assert(!space.EmptyPos(oldpoint));
+            space.SafeRemove(oldpoint);
+        }
+    }
+    
+    for (const auto& rubinewpoints : the_move.rubiscoNewPoints)
+    {
+        for (auto newpoint : rubinewpoints)
+        {
+            assert(space.EmptyPos(newpoint));
+            space.SafeCreate(newpoint, -1);
+        }
+    }
 }
 
 
 template <class S, class P, class M>
-int RubiMove<S,P,M>::ComputePSIncTriCrossLayer(TriMoveInfo<P>& the_trimove)
+void RubiMove<S, P, M>::UpdateRSpaceDrag(DragMoveInfo<P>& the_move)
 {
-    int old_nbr_ps = 0;
-    
-    for (auto oldpoint : space.Sumos[the_trimove.rubiscoid].locs)
+    for (auto rubiid : the_move.rubiscoIDs)
+        for (auto pt : space.Sumos[rubiid].locs) assert(space.GetRspacePoint(pt)[0] == rubiid);
+
+    for (int i = 0; i < the_move.rubiscoIDs.size(); i++)
     {
-        for (auto pt : space.Neighbor(space.BondNeighbor(oldpoint)[0]))
-        {
-            if (space.EmptyPos(pt))
-            {
-                old_nbr_ps ++;
-            }
-        }
+        int polyid = the_move.rubiscoIDs[i];
+        const auto& oldpoints = space.Sumos[polyid].locs;
+        for (auto oldpt: oldpoints)
+            space.SetRspacePoint(oldpt, NOBOND, NOBOND);
+    }
+    for (int i = 0; i < the_move.rubiscoIDs.size(); i++)
+    {
+        int polyid = the_move.rubiscoIDs[i];
+        auto& newpoints = the_move.rubiscoNewPoints[i];
+        for (int j = 0; j < newpoints.size(); j++)
+            space.SetRspacePoint(newpoints[j], polyid, j);
     }
     
-    for (auto oldpoint : space.Sims[the_trimove.epyc1id].locs)
+    for (auto epycid : the_move.epycIDs)
+        for (auto pt : space.Sims[epycid].locs) assert(space.GetRspacePoint(pt)[0] == epycid);
+    for (int i = 0; i < the_move.epycIDs.size(); i++)
     {
-        for (auto pt : space.Neighbor(space.BondNeighbor(oldpoint)[0]))
-        {
-            if (space.EmptyPos(pt))
-            {
-                old_nbr_ps ++;
-            }
-        }
+        int polyid = the_move.epycIDs[i];
+        const auto& oldpoints = space.Sims[polyid].locs;
+        for (auto oldpt: oldpoints)
+            space.SetRspacePoint(oldpt, NOBOND, NOBOND);
     }
-    
-    for (auto oldpoint : space.Sims[the_trimove.epyc2id].locs)
+    for (int i = 0; i < the_move.epycIDs.size(); i++)
     {
-        for (auto pt : space.Neighbor(space.BondNeighbor(oldpoint)[0]))
-        {
-            if (space.EmptyPos(pt))
-            {
-                old_nbr_ps ++;
-            }
-        }
+        int polyid = the_move.epycIDs[i];
+        auto& newpoints = the_move.epycNewPoints[i];
+        for (int j = 0; j < newpoints.size(); j++)
+            space.SetRspacePoint(newpoints[j], polyid, j);
     }
-    
-    // Count new number of PS bonds
-    int new_nbr_ps = 0;
-    auto epycnewpoints = the_trimove.epyc1newpoints;
-    epycnewpoints.insert(epycnewpoints.end(), the_trimove.epyc2newpoints.begin(), the_trimove.epyc2newpoints.end());
-    for (auto newpoint : epycnewpoints)
-    {
-        for (auto pt : space.Neighbor(space.BondNeighbor(newpoint)[0]))
-        {
-            bool will_be_killed = space.GetRspacePoint(pt)[0] == the_trimove.rubiscoid;
-            bool currently_empty = space.EmptyPos(pt);
-            
-            bool will_be_created = PointInVector(pt, the_trimove.rubisconewpoints); // pt is in newpoints
-            
-            bool will_be_PS = (will_be_killed || currently_empty) && (!will_be_created);
-            if (will_be_PS)
-            {
-                new_nbr_ps ++;
-            }
-        }
-    }
-    
-    for (auto newpoint : the_trimove.rubisconewpoints)
-    {
-        for (auto pt : space.Neighbor(space.BondNeighbor(newpoint)[0]))
-        {
-            bool will_be_killed = (space.GetRspacePoint(pt)[0] == the_trimove.epyc1id) || (space.GetRspacePoint(pt)[0] == the_trimove.epyc2id);
-            bool currently_empty = space.EmptyPos(pt);
-            
-            bool will_be_created = PointInVector(pt, epycnewpoints); // pt is in newpoints
-            
-            bool will_be_PS = (will_be_killed || currently_empty) && (!will_be_created);
-            if (will_be_PS)
-            {
-                new_nbr_ps ++;
-            }
-        }
-    }
-    
-    return new_nbr_ps - old_nbr_ps;
 }
 
+template <class S, class P, class M>
+void RubiMove<S, P, M>::UpdatePolymersDrag(DragMoveInfo<P>& the_move)
+{
+    for (int i = 0; i < the_move.epycIDs.size(); i++)
+        space.Sims[the_move.epycIDs[i]].locs = the_move.epycNewPoints[i];
+    for (int i = 0; i < the_move.rubiscoIDs.size(); i++)
+        space.Sumos[the_move.rubiscoIDs[i]].locs = the_move.rubiscoNewPoints[i];
+}
+
+template <class S, class P, class M>
+void RubiMove<S, P, M>::BuildNewBondsDrag(DragMoveInfo<P>& the_move)
+{
+    for (int i = 0; i < the_move.rubiscoIDs.size(); i++)
+    {
+        for(int id : the_move.rubiscoInBondIDs[i])
+        {
+            space.CreateBond(the_move.rubiscoNewPoints[i][id]);
+        }
+    }
+}
+
+// To be modified
+
+/*template <class S, class P, class M>
+bool RubiMove<S, P, M>::PredictEmptyPoint(DragMoveInfo<P>& the_move, P& point, bool siml)
+{
+    const vector<int>& polyids = (siml? the_move.epycIDs : the_move.rubiscoIDs);
+    const vector<vector<P>>& polyNewPts = (siml? the_move.epycNewPoints : the_move.rubiscoNewPoints);
+    int nbptID = space.GetRspacePoint(point)[0];
+    
+    // If that point is occupied by a polymer that is not to be moved
+    // Then that point is surely occupied by a polymer after the move
+    // Thus the whole function returns false
+    bool pointOccByUnmoved = true;
+    if (nbptID == NOBOND)
+        pointOccByUnmoved = false;
+    else
+        for (auto polyid : polyids)
+            if (polyid == nbptID)
+                pointOccByUnmoved = false;
+    
+    if (pointOccByUnmoved) return false;
+    
+    // If that point is not occupied by any polymer or is currently
+    // occupied by a polymer that is to be moved to new positions
+    // we need to check if that point is to be filled
+    
+
+}*/
+
+template <class S, class P, class M>
+pair<int, int> RubiMove<S,P,M>::ComputePSIncDrag(DragMoveInfo<P>& the_move)
+{
+    // step1 : compute the number of old PS bonds
+    int ps_rubisco_old = 0;
+    int ps_rubi_epyc_old = 0;
+    for (auto rubiID: the_move.rubiscoIDs)
+    {
+        const auto& OldPts = space.Sumos[rubiID].locs;
+        for (auto pt : OldPts)
+        {
+            for (auto nbrpt : space.Neighbor(pt))
+                ps_rubisco_old += (space.EmptyPos(nbrpt)? 1 : 0);
+            for (auto nbrpt : space.Neighbor(space.BondNeighbor(pt)[0]))
+                ps_rubi_epyc_old += (space.EmptyPos(nbrpt)? 1 : 0);
+        }
+    }
+    
+    int ps_epyc_old = 0;
+    int ps_epyc_rubi_old = 0;
+    for (auto epycID : the_move.epycIDs)
+    {
+        const auto& OldPts = space.Sims[epycID].locs;
+        for (auto pt : OldPts)
+        {
+            for (auto nbrpt : space.Neighbor(pt))
+                ps_epyc_old += (space.EmptyPos(nbrpt)? 1 : 0);
+            for (auto nbrpt : space.Neighbor(space.BondNeighbor(pt)[0]))
+                ps_epyc_rubi_old += (space.EmptyPos(nbrpt)? 1 : 0);
+        }
+    }
+    
+    // step2 : make tentative moves in space.space
+    vector<bool> rubiBond;
+    for (auto rubiID: the_move.rubiscoIDs)
+    {
+        const auto& OldPts = space.Sumos[rubiID].locs;
+        for (auto pt : OldPts)
+        {
+            bool inBond = space.InABond(pt);
+            rubiBond.push_back(inBond);
+            space.SetSpacePoint(pt, 0);
+        }
+    }
+    int rubicount = 0;
+    for (const auto& NewPts : the_move.rubiscoNewPoints)
+    {
+        for (auto pt : NewPts)
+        {
+            if (rubiBond[rubicount])
+                space.SetSpacePoint(pt, -2);
+            else
+                space.SetSpacePoint(pt, -1);
+            rubicount++;
+        }
+    }
+    vector<bool> epycBond;
+    for (auto epycID : the_move.epycIDs)
+    {
+        const auto& OldPts = space.Sims[epycID].locs;
+        for (auto pt : OldPts)
+        {
+            bool inBond = space.InABond(pt);
+            epycBond.push_back(inBond);
+            space.SetSpacePoint(pt, 0);
+        }
+    }
+    int epyccount = 0;
+    for (const auto& NewPts : the_move.epycNewPoints)
+    {
+        for (auto pt : NewPts)
+        {
+            if (epycBond[epyccount])
+                space.SetSpacePoint(pt, 2);
+            else
+                space.SetSpacePoint(pt, 1);
+            epyccount++;
+        }
+    }
+    
+    // step3 : Compute new number of bonds
+    int ps_rubisco_new = 0;
+    int ps_rubi_epyc_new = 0;
+    for (const auto& NewPts : the_move.rubiscoNewPoints)
+    {
+        for (auto pt : NewPts)
+        {
+            for (auto nbrpt : space.Neighbor(pt))
+                ps_rubisco_new += (space.EmptyPos(nbrpt)? 1 : 0);
+            for (auto nbrpt : space.Neighbor(space.BondNeighbor(pt)[0]))
+                ps_rubi_epyc_new += (space.EmptyPos(nbrpt)? 1 : 0);
+        }
+    }
+    
+    int ps_epyc_new = 0;
+    int ps_epyc_rubi_new = 0;
+    for (const auto& NewPts : the_move.epycNewPoints)
+    {
+        for (auto pt : NewPts)
+        {
+            for (auto nbrpt : space.Neighbor(pt))
+                ps_epyc_new += (space.EmptyPos(nbrpt)? 1 : 0);
+            for (auto nbrpt : space.Neighbor(space.BondNeighbor(pt)[0]))
+                ps_epyc_rubi_new += (space.EmptyPos(nbrpt)? 1 : 0);
+        }
+    }
+
+    // step4 : restore the original space
+    rubicount = 0;
+    for (const auto& NewPts : the_move.rubiscoNewPoints)
+        for (auto pt : NewPts)
+            space.SetSpacePoint(pt, 0);
+
+    for (auto rubiID: the_move.rubiscoIDs)
+    {
+        const auto& OldPts = space.Sumos[rubiID].locs;
+        for (auto pt : OldPts)
+        {
+            if (rubiBond[rubicount])
+                space.SetSpacePoint(pt, -2);
+            else
+                space.SetSpacePoint(pt, -1);
+            rubicount++;
+        }
+    }
+    
+    epyccount = 0;
+    for (const auto& NewPts : the_move.epycNewPoints)
+        for (auto pt : NewPts)
+            space.SetSpacePoint(pt, 0);
+
+    for (auto epycID : the_move.epycIDs)
+    {
+        const auto& OldPts = space.Sims[epycID].locs;
+        for (auto pt : OldPts)
+        {
+            if (epycBond[epyccount])
+                space.SetSpacePoint(pt, 2);
+            else
+                space.SetSpacePoint(pt, 1);
+            epyccount++;
+        }
+    }
+    return std::make_pair(ps_epyc_new + ps_rubisco_new - ps_epyc_old - ps_rubisco_old,
+                          ps_epyc_rubi_new + ps_rubi_epyc_new - ps_epyc_rubi_old - ps_rubi_epyc_old);
+    
+}
 
 
 #endif /* rubimoves_hpp */

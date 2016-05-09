@@ -57,8 +57,8 @@ public:
         if(oldpt.y < refpt.y - space.LSim - 1) oldpt.y += space.Ly;
         if(oldpt.x > refpt.x + space.LSim + 1) oldpt.x -= space.Lx;
         if(oldpt.y > refpt.y + space.LSim + 1) oldpt.y -= space.Ly;
-        assert(abs(oldpt.x - refpt.x) < space.LSim + 1);
-        assert(abs(oldpt.y - refpt.y) < space.LSim + 1);
+        assert(abs(oldpt.x - refpt.x) < space.LSim + 3);
+        assert(abs(oldpt.y - refpt.y) < space.LSim + 3);
         
         P newpt;
         newpt.siml = oldpt.siml; //I don't care about the refpt's layer
@@ -97,9 +97,44 @@ public:
         return true;
     }
     
+    bool TouchedOtherPolymers(const vector<int>& rubiscoIDs, const vector<int>& epycIDs)
+    {
+        for (auto rubiID : rubiscoIDs)
+        {
+            for (auto rubiPT : space.Sumos[rubiID].locs)
+            {
+                int correspondingID = space.GetRspacePoint(space.BondNeighbor(rubiPT)[0])[0];
+                if (correspondingID == NOBOND) continue;
+                bool danger = true;
+                for (auto epycID : epycIDs)
+                    if (epycID == correspondingID) danger = false;
+                if (danger)
+                    return true;
+            }
+        }
+        
+        for (auto epycID : epycIDs)
+        {
+            for (auto epycPT : space.Sims[epycID].locs)
+            {
+                int correspondingID = space.GetRspacePoint(space.BondNeighbor(epycPT)[0])[0];
+                if (correspondingID == NOBOND) continue;
+                bool danger = true;
+                for (auto rubiID : rubiscoIDs)
+                    if (rubiID == correspondingID) danger = false;
+                if (danger)
+                    return true;
+            }
+        }
+        return false;
+    }
+    
     vector<DragMoveInfo<P>> GetPossibleMultipleMoves(const vector<int>& rubiscoIDs, const vector<int>& epycIDs, const P& refpt)
     {
         vector<DragMoveInfo<P>> possible_moves;
+        
+        if (TouchedOtherPolymers(rubiscoIDs, epycIDs))
+            return possible_moves;
         
         vector<vector<int>> rubiscoInBondIDs;
         for (int rubiscoID : rubiscoIDs)
