@@ -280,7 +280,7 @@ public:
             for (auto pt : space.Sumos[rubiid].locs)
             {
                 x_occ[pt.x] = 1;
-                y_occ[pt.x] = 1;
+                y_occ[pt.y] = 1;
             }
         }
         
@@ -289,7 +289,7 @@ public:
             for (auto pt : space.Sims[epycid].locs)
             {
                 x_occ[pt.x] = 1;
-                y_occ[pt.x] = 1;
+                y_occ[pt.y] = 1;
             }
         }
         bool x_cycle = true, y_cycle = true;
