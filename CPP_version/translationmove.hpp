@@ -121,7 +121,7 @@ public:
         }
         
         
-        for (int i = 1; i < 4; i++)
+        for (int i = 1; i <= 4; i++)
         {
             DragMoveInfo<P> the_move;
             the_move.rubiscoIDs = rubiscoIDs;

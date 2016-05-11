@@ -58,8 +58,6 @@ public:
         if(oldpt.y < refpt.y - space.LSim - 1) oldpt.y += space.Ly;
         if(oldpt.x > refpt.x + space.LSim + 1) oldpt.x -= space.Lx;
         if(oldpt.y > refpt.y + space.LSim + 1) oldpt.y -= space.Ly;
-   //     assert(abs(oldpt.x - refpt.x) < space.LSim + 3);
-   //     assert(abs(oldpt.y - refpt.y) < space.LSim + 3);
         
         P newpt;
         newpt.siml = oldpt.siml; //I don't care about the refpt's layer
@@ -150,7 +148,7 @@ public:
         }
         
         
-        for (int i = 1; i < 3; i++)
+        for (int i = 1; i <= 3; i++)
         {
             DragMoveInfo<P> the_move;
             the_move.rubiscoIDs = rubiscoIDs;

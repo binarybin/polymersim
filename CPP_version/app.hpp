@@ -101,16 +101,14 @@ public:
                 break;
             case 'X':
                 returnvalue = Xm.GetSucc();
-                Tm.ClearSucc();
+                Xm.ClearSucc();
                 break;
                 
             case 'Y':
                 returnvalue = Ym.GetSucc();
-                Rm.ClearSucc();
+                Ym.ClearSucc();
                 break;
 
-
-                
             default:
                 break;
         }

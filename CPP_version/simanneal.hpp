@@ -26,8 +26,9 @@ class SimAnnealing
     string signature;
     string raw_filename;
     vector<tuple<int, double, double, int>> tasklist;
+    vector<char> move_list;
 public:
-    SimAnnealing(int nsim, int nsumo, int lsim, int lsumo, size_t lx, size_t ly, string run_signature, vector<tuple<int, double, double, int>> thetasklist) : app(nsim, nsumo, lsim, lsumo, lx, ly), signature(run_signature), tasklist(thetasklist)
+    SimAnnealing(int nsim, int nsumo, int lsim, int lsumo, size_t lx, size_t ly, string run_signature, vector<tuple<int, double, double, int>> thetasklist) : app(nsim, nsumo, lsim, lsumo, lx, ly), signature(run_signature), tasklist(thetasklist), move_list({'s', 'e', 'c', 't', 'r', 'T', 'R', 'X', 'Y'})
     {
         raw_filename = "PolymerSim_";
         raw_filename += string("SimAnneal_");
@@ -45,7 +46,9 @@ public:
     {
         app.Initialize();
         ofstream r_out(raw_filename + "_running.txt");
-        r_out<<"beta\t"<<"gamma\t"<<"S_succ\t"<<"E_succ\t"<<"C_succ\t"<<"T_succ\t"<<"R_succ\t"<<"CT_succ\t"<<"CR_succ\t"<<"BT_succ\t"<<"BR_succ\t"<<"energy"<<endl;
+        r_out<<"beta\t"<<"gamma\t";
+        for (auto move : move_list) r_out<<move<<"_succ\t";
+        r_out<<"energy"<<endl;
         for (auto task : tasklist)
         {
             int idx = std::get<0>(task);
@@ -59,40 +62,15 @@ public:
             cout<<"Running task #"<<idx<<" with beta = "<<beta<<" and gamma = "<<gamma<<", "<<runs<<" runs"<<endl;
             
             // reset the success statistics
-            app.ResetMoveSucc('s');
-            app.ResetMoveSucc('e');
-            app.ResetMoveSucc('c');
-            app.ResetMoveSucc('t');
-            app.ResetMoveSucc('r');
-            app.ResetMoveSucc('T');
-            app.ResetMoveSucc('R');
-            app.ResetMoveSucc('X');
-            app.ResetMoveSucc('Y');
+            for (auto move : move_list) app.ResetMoveSucc(move);
             for(int i = 1; i < runs+1; i++)
             {
-                app.Proceed('s');
-                app.Proceed('e');
-                app.Proceed('c');
-                app.Proceed('t');
-                app.Proceed('r');
-                app.Proceed('T');
-                app.Proceed('R');
-                app.Proceed('X');
-                app.Proceed('Y');
-                
+                for (auto move : move_list) app.Proceed(move);
                 
                 if (i % (runs/10000) == 0)
                 {
                     r_out<<beta<<"\t"<<gamma<<"\t";
-                    r_out<<app.ResetMoveSucc('s')<<"\t";
-                    r_out<<app.ResetMoveSucc('e')<<"\t";
-                    r_out<<app.ResetMoveSucc('c')<<"\t";
-                    r_out<<app.ResetMoveSucc('t')<<"\t";
-                    r_out<<app.ResetMoveSucc('r')<<"\t";
-                    r_out<<app.ResetMoveSucc('T')<<"\t";
-                    r_out<<app.ResetMoveSucc('R')<<"\t";
-                    r_out<<app.ResetMoveSucc('X')<<"\t";
-                    r_out<<app.ResetMoveSucc('Y')<<"\t";
+                    for (auto move : move_list) r_out<<app.ResetMoveSucc(move)<<"\t";
                     r_out<<app.GetEnergy()<<endl;
                 }
             }
