@@ -215,7 +215,7 @@ public:
         {
             auto task = tasks.front();
             tasks.pop_front();
-            const vector<P>& pts = (task.second ? space.Sims[task.first].locs : space.Sumos[task.second].locs);
+            const vector<P>& pts = (task.second ? space.Sims[task.first].locs : space.Sumos[task.first].locs);
             for (const auto & pt : pts)
             {
                 int linked_to_id = space.GetRspacePoint(space.BondNeighbor(pt)[0])[0];
@@ -240,7 +240,73 @@ public:
             if (a_pair.second == 1) epycs.push_back(a_pair.first);
         
         P refpt;
-        return GetPossibleMultipleMoves(rubis, epycs, refpt);
+
+#ifndef NDEBUG
+        cout<<"Trying translational blob move"<<endl;
+        auto newspace = space.space;
+        for (auto rubiid : rubis)
+        {
+            for (auto pt : space.Sumos[rubiid].locs)
+            {
+                newspace[1][pt.x][pt.y] = -3;
+            }
+        }
+        for (auto epycid : epycs)
+        {
+            for (auto pt : space.Sims[epycid].locs)
+            {
+                newspace[0][pt.x][pt.y] = 3;
+            }
+        }
+        
+        cout<<"Two dimensional double layer space"<<endl;
+        cout<<"Site occupation configuration: "<<endl;
+        for (int i = 0; i < space.Lx; i++)
+        {
+            for (int j = 0; j < space.Ly; j++)
+            {
+                cout<<newspace[0][i][j]<<","<<newspace[1][i][j]<<'\t';
+            }
+            cout<<endl;
+        }
+        cout<<"END"<<endl;
+#endif
+
+        
+        auto the_result = GetPossibleMultipleMoves(rubis, epycs, refpt);
+        
+#ifndef NDEBUG
+        for (auto result : the_result)
+        {
+            cout<<"We've got a move!"<<endl;
+            for (int i = 0; i < result.rubiscoIDs.size(); i++)
+            {
+                auto newpoints = result.rubiscoNewPoints[i];
+                auto id = result.rubiscoIDs[i];
+                cout<<"New Rubisco "<<id<<"\t"<<endl;
+                for (auto pt : newpoints)
+                {
+                    cout<<pt.x<<" "<<pt.y<<"\t";
+                }
+                cout<<endl;
+            }
+            for (int i = 0; i < result.epycIDs.size(); i++)
+            {
+                auto newpoints = result.epycNewPoints[i];
+                auto id = result.epycIDs[i];
+                cout<<"New EPYC "<<id<<"\t"<<endl;
+                for (auto pt : newpoints)
+                {
+                    cout<<pt.x<<" "<<pt.y<<"\t";
+                }
+                cout<<endl;
+            }
+            cout<<endl;
+        }
+#endif
+
+        
+        return the_result;
     }
 
 };
