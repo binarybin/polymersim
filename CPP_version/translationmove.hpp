@@ -13,6 +13,9 @@
 #include <vector>
 #include <cassert>
 #include <deque>
+#include <iostream>
+#include <fstream>
+#include <cstdlib>
 
 using std::tuple;
 using std::vector;
@@ -152,6 +155,24 @@ public:
             
             the_move.rubiscoInBondIDs = rubiscoInBondIDs;
             possible_moves.push_back(the_move);
+#ifndef NDEBUG
+            if (rand() % 100 == 0)
+            {
+                cout<<"Translational blob move type: "<<i<<endl;
+                cout<<"Rubiscos"<<endl;
+                for (auto idx : rubiscoIDs)
+                {
+                    cout<<idx<<'\t';
+                }
+                cout<<endl;
+                cout<<"EPYCs"<<endl;
+                for (auto idx : epycIDs)
+                {
+                    cout<<idx<<'\t';
+                }
+                cout<<endl;
+            }
+#endif
         }
         return possible_moves;
     }
@@ -240,7 +261,7 @@ public:
             if (a_pair.second == 1) epycs.push_back(a_pair.first);
         
         P refpt;
-
+/*
 #ifndef NDEBUG
         cout<<"Trying translational blob move"<<endl;
         auto newspace = space.space;
@@ -271,10 +292,10 @@ public:
         }
         cout<<"END"<<endl;
 #endif
-
+*/
         
         auto the_result = GetPossibleMultipleMoves(rubis, epycs, refpt);
-        
+/*
 #ifndef NDEBUG
         for (auto result : the_result)
         {
@@ -304,7 +325,7 @@ public:
             cout<<endl;
         }
 #endif
-
+*/
         
         return the_result;
     }

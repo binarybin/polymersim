@@ -179,6 +179,25 @@ public:
             
             the_move.rubiscoInBondIDs = rubiscoInBondIDs;
             possible_moves.push_back(the_move);
+#ifndef NDEBUG
+            if (rand() % 100 == 0)
+            {
+                cout<<"Rotational blob move type: "<<i<<endl;
+                cout<<"Rubiscos"<<endl;
+                for (auto idx : rubiscoIDs)
+                {
+                    cout<<idx<<'\t';
+                }
+                cout<<endl;
+                cout<<"EPYCs"<<endl;
+                for (auto idx : epycIDs)
+                {
+                    cout<<idx<<'\t';
+                }
+                cout<<endl;
+            }
+
+#endif
         }
         return possible_moves;
     }
@@ -305,7 +324,7 @@ public:
         {
             return the_result;
         }
-        
+/*
 #ifndef NDEBUG
         cout<<"Trying rotational blob move"<<endl;
         auto newspace = space.space;
@@ -335,6 +354,7 @@ public:
         }
         cout<<"END"<<endl;
 #endif
+ */
         // Now we just push them into the GetPossibleMultipleMoves function
         // to get rotations around different points
         for (auto rubiid : rubis)
@@ -343,7 +363,7 @@ public:
             auto moves_one_point = GetPossibleMultipleMoves(rubis, epycs, refpt);
             the_result.insert( the_result.end(), moves_one_point.begin(), moves_one_point.end() );
         }
-        
+/*
 #ifndef NDEBUG
         for (auto result : the_result)
         {
@@ -373,6 +393,7 @@ public:
             cout<<endl;
         }
 #endif
+ */
         return the_result;
     }
     
