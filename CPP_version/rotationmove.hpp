@@ -180,7 +180,7 @@ public:
             the_move.rubiscoInBondIDs = rubiscoInBondIDs;
             possible_moves.push_back(the_move);
 #ifndef NDEBUG
-            if (rand() % 100 == 0)
+    /*        if (rand() % 100 == 0)
             {
                 cout<<"Rotational blob move type: "<<i<<endl;
                 cout<<"Rubiscos"<<endl;
@@ -196,7 +196,7 @@ public:
                 }
                 cout<<endl;
             }
-
+*/
 #endif
         }
         return possible_moves;

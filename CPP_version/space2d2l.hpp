@@ -108,6 +108,50 @@ public:
             DenseInit(rows_sumo, 'u');
         }
     }
+    void CheckPhosphorylate()
+    {
+        for (auto poly : Sims)
+        {
+            cout<<"polymer"<<poly.poly_id<<endl;
+            for (int i = 0; i < poly.locs.size(); i++)
+            {
+                if (Phosphorylated(poly.locs[i]))
+                {
+                    cout<<"One phos site"<<i<<endl;
+                }
+            }
+        }
+    }
+    void Phosphorylate(int polyid, bool polytype, int siteid)
+    {
+        auto pt = polytype? Sims[polyid].locs[siteid] : Sumos[polyid].locs[siteid];
+        UnsafeRemoveBond(pt);
+        int val = GetSpacePoint(pt);
+        assert(abs(val) == 1);
+        SetSpacePoint(pt, val * 3);
+#ifndef NDEBUG
+        cout<<"Phosphorylate polymer "<<polyid<<" of type "<<polytype<<" at site "<<siteid<<endl;
+        CheckPhosphorylate();
+#endif
+    }
+    void Dephosphorylate(int polyid, bool polytype, int siteid)
+    {
+        auto pt = polytype? Sims[polyid].locs[siteid] : Sumos[polyid].locs[siteid];
+        int val = GetSpacePoint(pt);
+        assert(abs(val) == 3);
+        SetSpacePoint(pt, val/3);
+#ifndef NDEBUG
+        cout<<"Dephosphorylate polymer "<<polyid<<" of type "<<polytype<<" at site "<<siteid<<endl;
+#endif
+
+    }
+    bool Phosphorylated(Pos2d2l point)
+    {
+        int x = point.x;
+        int y = point.y;
+        int layer = point.siml? 0:1;
+        return abs(space[layer][x][y]) == 3;
+    }
     
     vector<Pos2d2l> Neighbor(Pos2d2l point)
     {
@@ -142,7 +186,7 @@ public:
         int layer = point.siml? 0:1;
         assert(space[layer][x][y] != 0);
         
-        if (abs(space[layer][x][y])!= 1) // we have a bond to remove, so remove it
+        if (abs(space[layer][x][y])== 2) // we have a bond to remove, so remove it
         {
             assert(abs(space[1-layer][x][y])==2); // assert bond consistency
             space[1-layer][x][y] = [](int &x) {return (x>0) - (x<0);}(space[1-layer][x][y]);
@@ -191,7 +235,7 @@ public:
     
     bool InABond(Pos2d2l point)
     {
-        return abs(space[point.siml? 0:1][point.x][point.y]) != 1 && abs(space[point.siml? 0:1][point.x][point.y]) != 0;
+        return abs(space[point.siml? 0:1][point.x][point.y]) == 2;
     }
     
     bool CanBuildBondTentative(Pos2d2l bpoint, int sitevalue)

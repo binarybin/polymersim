@@ -16,7 +16,6 @@
 #include <string>
 #include <stdexcept>
 #include <random>
-#include "space2d1l.hpp"
 #include "space2d2l.hpp"
 #include "move.hpp"
 #include "rubimoves.hpp"
@@ -60,6 +59,29 @@ public:
     void Initialize() {test_tube.Initialize();}
     
     void Proceed(char typ);
+    
+    void PhosphorylateOneSiteEpyc()
+    {
+        uniform_int_distribution<> dis(0, test_tube.LSim-1);
+        for (int i = 0; i < test_tube.NSim; i++)
+        {
+            int id_r = dis(gen);
+            test_tube.Phosphorylate(i, true, id_r);
+            cout<<"Phosphorylate EPYC "<<i<<" site "<<id_r<<endl;
+        }
+    }
+    void DephosphorylateAllEpyc()
+    {
+        for (int i = 0; i < test_tube.NSim; i++)
+        {
+            for (int j = 0; j < test_tube.LSim; j++)
+            {
+                if(test_tube.Phosphorylated(test_tube.Sims[i].locs[j]))
+                    test_tube.Dephosphorylate(i, true, j);
+            }
+        }
+    }
+    
     int ResetMoveSucc(char typ)
     {
         int returnvalue;
@@ -173,68 +195,6 @@ public:
 };
 
 template <>
-void App<Space2D1L, Pos2d1l>::TestPolymerAndSpace()
-{
-    auto tmpspace(test_tube.space);
-    for (auto& poly : test_tube.Sims)
-    {
-        for (auto& loc : poly.locs)
-        {
-            int x = loc.x;
-            int y = loc.y;
-            if (tmpspace[x][y] != 1 && tmpspace[x][y] != 2)
-            {
-                throw runtime_error("Polymer and space test failed for SIM");
-            }
-            tmpspace[x][y] = 0;
-        }
-    }
-    
-    for (auto& poly : test_tube.Sumos)
-    {
-        for (auto& loc : poly.locs)
-        {
-            int x = loc.x;
-            int y = loc.y;
-            if (tmpspace[x][y] != -1 && tmpspace[x][y] != -2)
-            {
-                throw runtime_error("Polymer and space test failed for SUMO");
-            }
-            tmpspace[x][y] = 0;
-        }
-    }
-    
-    for (int i = 0; i < tmpspace.size(); i++)
-    {
-        for (int j = 0; j < tmpspace[0].size(); j++)
-        {
-            if (tmpspace[i][j] != 0)
-            {
-                throw runtime_error("Polymer and space test failed for space");
-            }
-        }
-    }
-    
-    bool fail_deep_copy = true;
-    for (int i = 0; i < tmpspace.size(); i++)
-    {
-        for (int j = 0; j < tmpspace[0].size(); j++)
-        {
-            if (tmpspace[i][j] != test_tube.space[i][j])
-            {
-                fail_deep_copy = false;
-            }
-        }
-    }
-    
-    if (fail_deep_copy)
-    {
-//        throw runtime_error("Deep copy does not seem to work");
-    }
-    cout<<"Polymer and space test passed!"<<endl;
-}
-
-template <>
 void App<Space2D2L, Pos2d2l>::TestPolymerAndSpace()
 {
     auto tmpspace(test_tube.space);
@@ -246,7 +206,7 @@ void App<Space2D2L, Pos2d2l>::TestPolymerAndSpace()
             int y = loc.y;
             int layer = loc.siml?0:1;
             assert(loc.siml);
-            if (tmpspace[layer][x][y] != 1 && tmpspace[layer][x][y] != 2)
+            if (tmpspace[layer][x][y] != 1 && tmpspace[layer][x][y] != 2 && tmpspace[layer][x][y] != 3)
             {
                 throw runtime_error("Polymer and space test failed for SIM");
             }
@@ -262,7 +222,7 @@ void App<Space2D2L, Pos2d2l>::TestPolymerAndSpace()
             int y = loc.y;
             int layer = loc.siml?0:1;
             assert(!loc.siml);
-            if (tmpspace[layer][x][y] != -1 && tmpspace[layer][x][y] != -2)
+            if (tmpspace[layer][x][y] != -1 && tmpspace[layer][x][y] != -2 && tmpspace[layer][x][y] != -3)
             {
                 throw runtime_error("Polymer and space test failed for SUMO");
             }
@@ -301,50 +261,6 @@ void App<Space2D2L, Pos2d2l>::TestPolymerAndSpace()
     cout<<"Polymer and space test passed!"<<endl;
 }
 
-
-template <>
-void App<Space2D1L, Pos2d1l>::TestSpaceAndBond()
-{
-    auto tempspace(test_tube.space);
-    for (int i = 0; i < test_tube.bond.size(); i++)
-    {
-        for (int j = 0;  j < test_tube.bond[0].size(); j++)
-        {
-            int x = test_tube.bond[i][j][0];
-            int y = test_tube.bond[i][j][1];
-            if (x != NOBOND && y != NOBOND)
-            {
-                if (abs(tempspace[i][j]) != 2)
-                {
-                    throw runtime_error("A bond suggested by bond is not fond on space");
-                }
-                tempspace[i][j] /= 2;
-                int rx = test_tube.bond[x][y][0];
-                int ry = test_tube.bond[x][y][1];
-                if (rx != i || ry != j)
-                {
-                    throw runtime_error("Bond reversibility check failed");
-                }
-                
-            }
-        }
-    }
-    
-    for (int i = 0; i < tempspace.size(); i++)
-    {
-        for (int j = 0; j < tempspace[0].size(); j++)
-        {
-            if (abs(tempspace[i][j]) == 2)
-            {
-                throw runtime_error("Bond check failed, more bond in space than in bond");
-            }
-        }
-    }
-    
-    cout<<"Bond and space test passed!"<<endl;
-}
-
-
 template <>
 void App<Space2D2L, Pos2d2l>::TestSpaceAndBond()
 {
@@ -364,44 +280,6 @@ void App<Space2D2L, Pos2d2l>::TestSpaceAndBond()
     }
     
     cout<<"Bond and space test passed!"<<endl;
-}
-
-template <>
-void App<Space2D1L, Pos2d1l>::TestReverseSpace()
-{
-    auto tempspace(test_tube.space);
-    for (int i = 0; i < test_tube.rspace.size(); i++)
-    {
-        for (int j = 0; j < test_tube.rspace[0].size(); j++)
-        {
-            if (test_tube.rspace[i][j][0] == NOBOND && test_tube.rspace[i][j][1] == NOBOND)
-                continue;
-            
-            int id = test_tube.rspace[i][j][0];
-            int pos = test_tube.rspace[i][j][1];
-            Pos2d1l loc = test_tube.space[i][j] > 0 ? test_tube.Sims[id].locs[pos] : test_tube.Sumos[id].locs[pos];
-            int rx = loc.x;
-            int ry = loc.y;
-            if (rx != i || ry != j)
-            {
-                throw runtime_error("Reverse space inconsistent");
-            }
-            tempspace[i][j] = 0;
-        }
-    }
-    
-    for (int i = 0; i < tempspace.size(); i++)
-    {
-        for (int j = 0; j < tempspace[0].size(); j++)
-        {
-            if (tempspace[i][j] != 0)
-            {
-                throw runtime_error("Reverse space check failed, more monomers in space than in bond");
-            }
-        }
-    }
-
-    cout<<"Reverse space test passed!"<<endl;
 }
 
 template <>
@@ -620,31 +498,6 @@ vector<vector<string>> App<Space2D2L, Pos2d2l>::GenericBondAnal(vector<string>& 
 {
     vector<vector<string>> result;
     result.push_back(bondbuf);
-    return result;
-}
-
-template <>
-vector<vector<string>> App<Space2D1L, Pos2d1l>::GenericBondAnal(vector<string>& bondbuf)
-{
-    bondbuf.pop_back();
-    bondbuf.erase(bondbuf.begin());
-    assert(bondbuf[0].compare("Two dimensional single layer space") == 0);
-    assert(bondbuf[1].compare("Bond configuration: ") == 0);
-    assert(bondbuf[bondbuf.size()-1].compare("END") == 0);
-    bondbuf.erase(bondbuf.begin());
-    bondbuf.erase(bondbuf.begin());
-    bondbuf.pop_back();
-    vector<vector<string>> result;
-    char delim = '\t';
-    
-    for (int i = 0; i < bondbuf.size(); i++)
-    {
-        vector<string> tokens;
-        istringstream split(bondbuf[i]);
-        for (std::string each; std::getline(split, each, delim); tokens.push_back(each));
-        result.push_back(tokens);
-    }
-    
     return result;
 }
 

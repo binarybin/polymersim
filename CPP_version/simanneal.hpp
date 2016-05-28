@@ -25,10 +25,10 @@ class SimAnnealing
     App<S, P> app;
     string signature;
     string raw_filename;
-    vector<tuple<int, double, double, int>> tasklist;
+    vector<tuple<int, double, double, int, int>> tasklist;
     vector<char> move_list;
 public:
-    SimAnnealing(int nsim, int nsumo, int lsim, int lsumo, size_t lx, size_t ly, string run_signature, vector<tuple<int, double, double, int>> thetasklist) : app(nsim, nsumo, lsim, lsumo, lx, ly), signature(run_signature), tasklist(thetasklist), move_list({'s', 'e', 'c', 't', 'r', 'T', 'R', 'X', 'Y'})
+    SimAnnealing(int nsim, int nsumo, int lsim, int lsumo, size_t lx, size_t ly, string run_signature, vector<tuple<int, double, double, int, int>> thetasklist) : app(nsim, nsumo, lsim, lsumo, lx, ly), signature(run_signature), tasklist(thetasklist), move_list({'s', 'e', 'c', 't', 'r', 'T', 'R', 'X', 'Y'})
     {
         raw_filename = "PolymerSim_";
         raw_filename += string("SimAnneal_");
@@ -55,7 +55,15 @@ public:
             double beta = std::get<1>(task);
             double gamma = std::get<2>(task);
             int runs = std::get<3>(task);
-            
+            int phos = std::get<4>(task);
+            if (phos == 1)
+            {
+                app.PhosphorylateOneSiteEpyc();
+            }
+            else if(phos == -1)
+            {
+                app.DephosphorylateAllEpyc();
+            }
             app.SetBeta(beta);
             app.SetGamma(gamma);
             

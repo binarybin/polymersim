@@ -17,7 +17,6 @@
 #include <set>
 #include <algorithm>
 #include <unordered_map>
-#include "space2d1l.hpp"
 #include "space2d2l.hpp"
 #include "translationmove.hpp"
 #include "rotationmove.hpp"
@@ -122,7 +121,6 @@ template <class S, class P, class M>
 tuple<bool, int> RubiMove<S, P, M>::ExecMove(int polyid, char polytyp)
 {
     Polymer<P>& poly = polytyp=='i' ? space.Sims[polyid] : space.Sumos[polyid];
-    int sitevalue = polytyp=='i' ? 1 : -1;
     
     auto possible_moves = move.GetPossibleMoves(poly, polyid);
     
@@ -137,14 +135,26 @@ tuple<bool, int> RubiMove<S, P, M>::ExecMove(int polyid, char polytyp)
     
     if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc, nbr_ps_inc))
     {
+        // NOTE: for this part, a better way is to dephosphorylate all of them, finish the move, and phosphorylate them. So sitevalues will still be +/- 1
+        vector<int> sitevalues;
+        
         for (auto oldpoint : poly.locs)
         {
             assert(!space.EmptyPos(oldpoint));
+            int sitevalue = space.GetSpacePoint(oldpoint);
+            if (abs(sitevalue) == 2)
+            {
+                sitevalue /= 2;
+            }
+            sitevalues.push_back(sitevalue);
             space.SafeRemove(oldpoint);
         }
         
+        int idx = 0;
         for (auto newpoint : newpoints)
         {
+            int sitevalue = sitevalues[idx];
+            idx ++;
             assert(space.EmptyPos(newpoint));
             space.SafeCreate(newpoint, sitevalue);
         }
@@ -181,10 +191,11 @@ tuple<int, vector<int>> RubiMove<S,P,M>::ComputeBondInc(Polymer<P> poly, vector<
     {
         P bpoint = space.BondNeighbor(newpoints[i])[0];
         int epycid = space.GetRspacePoint(bpoint)[0];
-        if (epycid != NOBOND)
-        {
-            rubisco_epyc[epycid].push_back(i);
-        }
+        if (epycid != NOBOND )
+            if (!space.Phosphorylated(bpoint))
+            {
+                rubisco_epyc[epycid].push_back(i);
+            }
     }
     
     vector<int> result_pos;
@@ -308,6 +319,7 @@ int RubiMove<S,P,M>::ComputePSIncSameLayer(Polymer<P> poly, vector<P> newpoints,
 template <class S, class P, class M>
 bool RubiMove<S, P, M>::ExecDragMove(int polyid, bool blob)
 {
+
     vector<DragMoveInfo<P>> possible_moves;
     if (blob)
     {
@@ -323,8 +335,13 @@ bool RubiMove<S, P, M>::ExecDragMove(int polyid, bool blob)
     if (possible_moves.empty()) return false; // No available move for the trimer, no move
     
     auto the_move = ChooseMove(possible_moves); // Choose the target points of the rubisco
-    
+#ifndef NDEBUG
+    PrintSpace(cout, space);
+#endif
     auto nbr_ps_inc_pair = ComputePSIncDrag(the_move);
+#ifndef NDEBUG
+    PrintSpace(cout, space);
+#endif
     int nbr_ps_inc = nbr_ps_inc_pair.first + nbr_ps_inc_pair.second;
     
     
@@ -343,39 +360,84 @@ bool RubiMove<S, P, M>::ExecDragMove(int polyid, bool blob)
 template <class S, class P, class M>
 void RubiMove<S, P, M>::UpdateRealSpaceDrag(DragMoveInfo<P>& the_move)
 {
+    vector<vector<bool>> phosepyc;
+
     for (auto epycid : the_move.epycIDs)
     {
+        vector<bool> phos;
         for (auto oldpoint : space.Sims[epycid].locs)
         {
+            if (abs(space.GetSpacePoint(oldpoint)) == 3)
+                phos.push_back(true);
+            else
+                phos.push_back(false);
+#ifndef NDEBUG
+            cout<<epycid<<" "<<oldpoint.x<<" "<<oldpoint.y<<" "<<oldpoint.siml<<" "<<space.GetSpacePoint(oldpoint)<<endl;
+#endif
             assert(!space.EmptyPos(oldpoint));
             space.SafeRemove(oldpoint);
         }
+        phosepyc.push_back(phos);
     }
+#ifndef NDEBUG
+    cout<<"EPYC phos"<<endl;
+    for (auto line : phosepyc)
+    {
+        for (auto p : line)
+        {
+            cout<<p<<'\t';
+        }
+        cout<<endl;
+    }
+#endif
     
+    int epycidx = 0;
     for (const auto& epycnewpoints : the_move.epycNewPoints)
     {
+        int idx = 0;
         for (auto newpoint : epycnewpoints)
         {
             assert(space.EmptyPos(newpoint));
-            space.SafeCreate(newpoint, 1);
+            if (phosepyc[epycidx][idx])
+                space.SafeCreate(newpoint, 3);
+            else
+                space.SafeCreate(newpoint, 1);
+            
+            idx ++;
         }
+        epycidx ++;
     }
+    
+    vector<vector<bool>> phosrubi;
     for (auto rubiid : the_move.rubiscoIDs)
     {
+        vector<bool> phos;
         for (auto oldpoint : space.Sumos[rubiid].locs)
         {
+            if (abs(space.GetSpacePoint(oldpoint)) == 3)
+                phos.push_back(true);
+            else
+                phos.push_back(false);
             assert(!space.EmptyPos(oldpoint));
             space.SafeRemove(oldpoint);
         }
+        phosepyc.push_back(phos);
     }
     
+    int rubiidx = 0;
     for (const auto& rubinewpoints : the_move.rubiscoNewPoints)
     {
+        int idx = 0;
         for (auto newpoint : rubinewpoints)
         {
             assert(space.EmptyPos(newpoint));
-            space.SafeCreate(newpoint, -1);
+            if (phosepyc[epycidx][idx])
+                space.SafeCreate(newpoint, -3);
+            else
+                space.SafeCreate(newpoint, -1);
+            idx ++;
         }
+        rubiidx ++;
     }
 }
 
@@ -474,14 +536,13 @@ pair<int, int> RubiMove<S,P,M>::ComputePSIncDrag(DragMoveInfo<P>& the_move)
     }
     
     // step2 : make tentative moves in space.space
-    vector<bool> rubiBond;
+    vector<int> rubiVal;
     for (auto rubiID: the_move.rubiscoIDs)
     {
         const auto& OldPts = space.Sumos[rubiID].locs;
         for (auto pt : OldPts)
         {
-            bool inBond = space.InABond(pt);
-            rubiBond.push_back(inBond);
+            rubiVal.push_back(space.GetSpacePoint(pt));
             space.SetSpacePoint(pt, 0);
         }
     }
@@ -490,21 +551,17 @@ pair<int, int> RubiMove<S,P,M>::ComputePSIncDrag(DragMoveInfo<P>& the_move)
     {
         for (auto pt : NewPts)
         {
-            if (rubiBond[rubicount])
-                space.SetSpacePoint(pt, -2);
-            else
-                space.SetSpacePoint(pt, -1);
+            space.SetSpacePoint(pt, rubiVal[rubicount]);
             rubicount++;
         }
     }
-    vector<bool> epycBond;
+    vector<int> epycVal;
     for (auto epycID : the_move.epycIDs)
     {
         const auto& OldPts = space.Sims[epycID].locs;
         for (auto pt : OldPts)
         {
-            bool inBond = space.InABond(pt);
-            epycBond.push_back(inBond);
+            epycVal.push_back(space.GetSpacePoint(pt));
             space.SetSpacePoint(pt, 0);
         }
     }
@@ -513,10 +570,7 @@ pair<int, int> RubiMove<S,P,M>::ComputePSIncDrag(DragMoveInfo<P>& the_move)
     {
         for (auto pt : NewPts)
         {
-            if (epycBond[epyccount])
-                space.SetSpacePoint(pt, 2);
-            else
-                space.SetSpacePoint(pt, 1);
+            space.SetSpacePoint(pt, epycVal[epyccount]);
             epyccount++;
         }
     }
@@ -559,10 +613,7 @@ pair<int, int> RubiMove<S,P,M>::ComputePSIncDrag(DragMoveInfo<P>& the_move)
         const auto& OldPts = space.Sumos[rubiID].locs;
         for (auto pt : OldPts)
         {
-            if (rubiBond[rubicount])
-                space.SetSpacePoint(pt, -2);
-            else
-                space.SetSpacePoint(pt, -1);
+            space.SetSpacePoint(pt, rubiVal[rubicount]);
             rubicount++;
         }
     }
@@ -577,10 +628,7 @@ pair<int, int> RubiMove<S,P,M>::ComputePSIncDrag(DragMoveInfo<P>& the_move)
         const auto& OldPts = space.Sims[epycID].locs;
         for (auto pt : OldPts)
         {
-            if (epycBond[epyccount])
-                space.SetSpacePoint(pt, 2);
-            else
-                space.SetSpacePoint(pt, 1);
+            space.SetSpacePoint(pt, epycVal[epyccount]);
             epyccount++;
         }
     }
@@ -591,35 +639,3 @@ pair<int, int> RubiMove<S,P,M>::ComputePSIncDrag(DragMoveInfo<P>& the_move)
 
 
 #endif /* rubimoves_hpp */
-
-
-
-// To be modified
-
-/*template <class S, class P, class M>
- bool RubiMove<S, P, M>::PredictEmptyPoint(DragMoveInfo<P>& the_move, P& point, bool siml)
- {
- const vector<int>& polyids = (siml? the_move.epycIDs : the_move.rubiscoIDs);
- const vector<vector<P>>& polyNewPts = (siml? the_move.epycNewPoints : the_move.rubiscoNewPoints);
- int nbptID = space.GetRspacePoint(point)[0];
- 
- // If that point is occupied by a polymer that is not to be moved
- // Then that point is surely occupied by a polymer after the move
- // Thus the whole function returns false
- bool pointOccByUnmoved = true;
- if (nbptID == NOBOND)
- pointOccByUnmoved = false;
- else
- for (auto polyid : polyids)
- if (polyid == nbptID)
- pointOccByUnmoved = false;
- 
- if (pointOccByUnmoved) return false;
- 
- // If that point is not occupied by any polymer or is currently
- // occupied by a polymer that is to be moved to new positions
- // we need to check if that point is to be filled
- 
- 
- }*/
-

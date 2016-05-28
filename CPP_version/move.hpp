@@ -13,7 +13,6 @@
 #include <stdexcept>
 #include <tuple>
 #include <random>
-#include "space2d1l.hpp"
 #include "space2d2l.hpp"
 #include "endmove.hpp"
 #include "snakemove.hpp"
@@ -126,15 +125,17 @@ tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P
     
     std::map<int, vector<pair<int, int>>> epyc_rubisco; //map from rubisco_id to (point_in_epic, point_in_rubisco)
     for (int i = 0; i < space.LSim; i++)
-    {
-        P bpoint = space.BondNeighbor(newpoints[i])[0];
-        int rubiscoid = space.GetRspacePoint(bpoint)[0];
-        int rubiscopos = space.GetRspacePoint(bpoint)[1];
-        if (rubiscoid != NOBOND)
+        if (!space.Phosphorylated(poly.locs[i]))
         {
-            epyc_rubisco[rubiscoid].push_back(std::make_pair(i, rubiscopos));
+            P bpoint = space.BondNeighbor(newpoints[i])[0];
+            int rubiscoid = space.GetRspacePoint(bpoint)[0];
+            int rubiscopos = space.GetRspacePoint(bpoint)[1];
+            if (rubiscoid != NOBOND)
+                if (!space.Phosphorylated(bpoint))
+                {
+                    epyc_rubisco[rubiscoid].push_back(std::make_pair(i, rubiscopos));
+                }
         }
-    }
     
     vector<int> result_pos;
     
@@ -186,6 +187,11 @@ tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P
         }
     }
     
+    for (auto id : result_pos)
+    {
+        assert(!space.Phosphorylated(poly.locs[id]));
+    }
+    
     new_nbr_bond = (int)(result_pos.size());
     return std::make_tuple(new_nbr_bond - old_nbr_bond, result_pos);
 }
@@ -195,7 +201,6 @@ template <class S, class P, class M>
 tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
 {
     Polymer<P>& poly = polytyp=='i' ? space.Sims[polyid] : space.Sumos[polyid];
-    int sitevalue = polytyp=='i' ? 1 : -1;
     
     vector<tuple<int, int, P>> possible_moves = move.GetPossibleMoves(poly);
     
@@ -208,28 +213,48 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
     int nbr_bond_inc = 0; vector<int> bond_id_list;
     Polymer<P> temp_new_polymer = poly;
     move.UpdatePolymer(temp_new_polymer, kill_pointid, newpoint);
+#ifndef NDEBUG
+    cout<<"dealing with EPYC "<<polyid<<endl;
+#endif
     tie(nbr_bond_inc, bond_id_list) = ComputeBondInc(poly, temp_new_polymer.locs);
     
     
-    
-    // This part needs to be fixed
     int nbr_ps_inc = ComputePSIncSameLayer(oldpoint, newpoint, polyid) + ComputePSIncCrossLayer(oldpoint, newpoint, polyid);
     
     if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc, nbr_ps_inc))
     {
+        int sitevalue = space.GetSpacePoint(oldpoint);
+        sitevalue = sitevalue/abs(sitevalue);
+        
         for (auto oldpoint : poly.locs)
         {
             space.UnsafeRemoveBond(oldpoint);
         }
+        
+        vector<int> phosphorylated_pts;
+        for (int i = 0; i < poly.locs.size(); i++)
+        {
+            if (space.Phosphorylated(poly.locs[i]))
+            {
+                phosphorylated_pts.push_back(i);
+                space.Dephosphorylate(polyid, polytyp, i);
+            }
+        }
+        
         assert(!space.EmptyPos(oldpoint));
         space.SafeRemove(oldpoint);
         space.SafeCreate(newpoint, sitevalue);
         move.UpdatePolymer(poly, kill_pointid, newpoint);
         move.UpdateReverseCheckingSpace(oldpoint, newpoint, poly);
         
+        
         for (auto pointid : bond_id_list)
         {
             space.CreateBond(poly.locs[pointid]);
+        }
+        for (auto phosid : phosphorylated_pts)
+        {
+            space.Phosphorylate(polyid, polytyp, phosid);
         }
         
         succ += 1;
