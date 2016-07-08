@@ -206,7 +206,8 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
     
     if (possible_moves.empty()) return make_tuple(false, 0);
     
-    int kill_pointid = 0; int create_pointid; P newpoint; tie(kill_pointid, create_pointid, newpoint) = ChooseMove(possible_moves);
+    int kill_pointid = 0; int create_pointid; P newpoint;
+    tie(kill_pointid, create_pointid, newpoint) = ChooseMove(possible_moves);
     
     P oldpoint = poly.locs[kill_pointid];
     

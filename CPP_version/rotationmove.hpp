@@ -205,6 +205,7 @@ public:
     {
         auto NewPoints = (layer == 'e')? dragmove.epycNewPoints : dragmove.rubiscoNewPoints;
         auto IDs = (layer == 'e')? dragmove.epycIDs : dragmove.rubiscoIDs;
+        auto CoIDs = (layer != 'e')? dragmove.epycIDs : dragmove.rubiscoIDs;
         
         for (auto new_pts : NewPoints)
         {
@@ -223,11 +224,22 @@ public:
                     //so that is not a feasible move
                     if (not_in_the_list) return false;
                 }
+                int coptid = space.GetRspacePoint(space.BondNeighbor(newpt)[0])[0];
+                if (coptid != NOBOND)
+                {
+                    // The corresponding site on the other layer is not intrinsically empty, we should check if it's gonna be removed
+                    bool not_in_the_list = true;
+                    for (auto coid : CoIDs) if (coid == coptid) not_in_the_list = false;
+                    // I see a point that I am trying to move to of which the other layer point
+                    //is neither empty nor in the list to be cleared so that it is not a feasible move
+                    if (not_in_the_list) return false;
+                }
             }
         }
+        
+        
         return true;
     }
-    
     vector<DragMoveInfo<P>> GetPossibleDragMoves(int rubiscoID)
     {
         vector<int> rubiscoIDs;
