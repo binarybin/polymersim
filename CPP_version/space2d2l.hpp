@@ -321,6 +321,20 @@ public:
         int polypos = rspace[cooldpoint.siml? 0:1][cooldpoint.x][cooldpoint.y][0];
         return make_tuple(polyid, polypos);
     }
+    
+    void ReduceEpycLength()
+    {
+        LSim -= 1;
+        for (auto poly : Sims)
+        {
+            auto pt = poly.locs.back();
+            SafeRemove(pt);
+            int layer = pt.siml? 0:1;
+            rspace[layer][pt.x][pt.y][0] = NOBOND;
+            rspace[layer][pt.x][pt.y][1] = NOBOND;
+            poly.locs.pop_back();
+        }
+    }
 };
 
 std::ostream& PrintSpace(std::ostream &out, Space2D2L &space);

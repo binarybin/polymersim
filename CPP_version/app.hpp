@@ -81,6 +81,10 @@ public:
             }
         }
     }
+    void ReduceEpycLength()
+    {
+        test_tube.ReduceEpycLength();
+    }
     
     int ResetMoveSucc(char typ)
     {

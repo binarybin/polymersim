@@ -64,6 +64,10 @@ public:
             {
                 app.DephosphorylateAllEpyc();
             }
+            else if(phos == 5) // a code for changing the epyc length from 5 to 4
+            {
+                app.ReduceEpycLength();
+            }
             app.SetBeta(beta);
             app.SetGamma(gamma);
             
