@@ -325,7 +325,7 @@ public:
     void ReduceEpycLength()
     {
         LSim -= 1;
-        for (auto poly : Sims)
+        for (auto& poly : Sims)
         {
             auto pt = poly.locs.back();
             SafeRemove(pt);
