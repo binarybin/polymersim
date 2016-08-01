@@ -43,12 +43,44 @@ public:
         
         return possible_moves;
     }
-
+    
+    vector<tuple<int, P, int, int, P>> GetPossibleCoMoves(Polymer<P>& poly);
+   
     void UpdateReverseCheckingSpace(P& oldpoint, P& newpoint, Polymer<P>& poly)
     {
         space.RSpacePointMove(oldpoint, newpoint);
     }
+    
 };
+
+template<>
+vector<tuple<int, Pos2d2l, int, int, Pos2d2l>> EndMove<Space2D2L, Pos2d2l>::GetPossibleCoMoves(Polymer<Pos2d2l>& polysim)
+{
+    vector<tuple<int, Pos2d2l, int, int, Pos2d2l>> result;
+    vector<tuple<int, Pos2d2l>> possible_sim_moves = GetPossibleMoves(polysim);
+    for (auto simmove : possible_sim_moves)
+    {
+        int simpointid=0; Pos2d2l point; std::tie(simpointid, point) = simmove;
+        Pos2d2l otheroldpoint = polysim.locs[simpointid].OtherLayer();
+        if (!space.EmptyPos(otheroldpoint))
+        {
+            int sumoid = space.rspace[1][otheroldpoint.x][otheroldpoint.y][0];
+            Polymer<Pos2d2l>& polysumo = space.Sumos[sumoid];
+            vector<tuple<int, Pos2d2l>> possible_sumo_moves = GetPossibleMoves(polysumo);
+            for (auto sumomove : possible_sumo_moves)
+            {
+                int sumopointid = 0; Pos2d2l sumopoint; std::tie(sumopointid, sumopoint) = sumomove;
+                Pos2d2l oldsumopoint = polysumo.locs[sumopointid];
+                if(sumopoint.x == point.x && sumopoint.y == point.y && otheroldpoint.x == oldsumopoint.x&& otheroldpoint.y == oldsumopoint.y)
+                    result.push_back(std::make_tuple(simpointid, point, sumoid, sumopointid, sumopoint));
+            }
+        }
+    }
+    
+    return result;
+}
+
+
 
 
 #endif /* endmove_hpp */

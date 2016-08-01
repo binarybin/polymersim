@@ -38,6 +38,11 @@ public:
     {
         return (siml == other.siml) && (x == other.x) != (y == other.y);
     }
+    
+    Pos2d2l OtherLayer()
+    {
+        return Pos2d2l(x, y, !siml);
+    }
 };
 
 class Pos3d1l

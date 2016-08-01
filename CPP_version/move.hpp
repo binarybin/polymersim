@@ -14,7 +14,7 @@
 #include <tuple>
 #include <random>
 #include "space2d1l.hpp"
-#include "space2d1l.hpp"
+#include "space2d2l.hpp"
 #include "endmove.hpp"
 #include "snakemove.hpp"
 #include "cornermove.hpp"
@@ -34,6 +34,7 @@ private:
     S& space;
     M move;
     double beta;
+    double gamma;
     
     int succ;
     
@@ -42,13 +43,15 @@ private:
     
 public:
     int bond_change;
-    Move(S &thespace): move(thespace), space(thespace), beta(0), bond_change(0), succ(0), gen(rd()){}
+    Move(S &thespace): move(thespace), space(thespace), beta(0), gamma(0), bond_change(0), succ(0), gen(rd()){}
     
     void ClearSucc(){succ=0;}
     int GetSucc(){return succ;}
     
     tuple<bool, int> ExecMove(int polyid, char polytyp);
-    void SetBeta(double setbeta)  {this->beta = setbeta;}
+    tuple<bool, int> ExecCoMove(int simid);
+    void SetBeta(double setbeta)  {beta = setbeta;}
+    void SetGamma(double setgamma) {gamma = setgamma;}
     
     P ChooseBond(vector<P> bond_choice)
     {
@@ -65,8 +68,15 @@ public:
         assert(id >= 0 && id < possible_moves.size());
         return possible_moves[id];
     }
+    tuple<int, P, int, int, P> ChooseCoMove(vector<tuple<int, Pos2d2l, int, int, Pos2d2l>> possible_moves)
+    {
+        uniform_int_distribution<> dis(0, (int)possible_moves.size()-1);
+        size_t id = dis(gen);
+        assert(id >= 0 && id < possible_moves.size());
+        return possible_moves[id];
+    }
     
-    double Weight(int nbr_bond_inc) {return exp(nbr_bond_inc * beta);}
+    double Weight(int nbr_bond_inc, int nbr_ps_inc) {return exp(nbr_bond_inc * beta - nbr_ps_inc * gamma);}
    
 };
 
@@ -86,7 +96,7 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
     
     P oldpoint = poly.locs[pointid];
     
-    if (space.InABond(oldpoint)) nbr_bond_inc -= 1;
+    if (space.InABond(oldpoint)) nbr_bond_inc --;
     
     vector<P> bond_choice;
     
@@ -94,11 +104,26 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
         if (space.CanBuildBondTentative(bpoint, sitevalue))
             bond_choice.push_back(bpoint);
     
-    if (!bond_choice.empty()) nbr_bond_inc += 1;
+    if (!bond_choice.empty()) nbr_bond_inc ++;
     
+    int nbr_ps_inc = 0;
+    for (auto& pt : space.Neighbor(oldpoint))
+    {
+        if (space.EmptyPos(pt))
+        {
+            nbr_ps_inc --;
+        }
+    }
     
+    for (auto& pt : space.Neighbor(newpoint))
+    {
+        if (space.EmptyPos(pt))
+        {
+            nbr_ps_inc ++;
+        }
+    }
     
-    if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc))
+    if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc, nbr_ps_inc))
     {
         assert(!space.EmptyPos(oldpoint));
         space.SafeRemove(oldpoint);
@@ -118,6 +143,86 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
     }
     else
         return make_tuple(false, nbr_bond_inc);
+}
+
+template <class S, class P, class M>
+tuple<bool, int> Move<S, P, M>::ExecCoMove(int simid)
+{
+    Polymer<P>& poly = space.Sims[simid];
+    
+    vector<tuple<int, P, int, int, P>> possible_comoves = move.GetPossibleCoMoves(poly);
+    //move sims[simid]$1 to $2, move sumos[$3]$4 to $5
+    
+    if (possible_comoves.empty()) return make_tuple(false, 0);
+    
+    int simpointid = 0; int sumoid = 0; int sumopointid = 0; P newsimpoint; P newsumopoint;
+    tie(simpointid, newsimpoint, sumoid, sumopointid, newsumopoint) = ChooseCoMove(possible_comoves);
+    
+    P oldsimpoint = poly.locs[simpointid];
+    P oldsumopoint = oldsimpoint.OtherLayer();
+    
+    int nbr_bond_inc = 0;
+    
+    if(!space.InABond(oldsimpoint))
+        nbr_bond_inc ++;
+    
+    int nbr_ps_inc = 0;
+    for (auto& pt : space.Neighbor(oldsimpoint))
+    {
+        if (space.EmptyPos(pt))
+        {
+            nbr_ps_inc --;
+        }
+    }
+    
+    for (auto& pt : space.Neighbor(newsimpoint))
+    {
+        if (space.EmptyPos(pt))
+        {
+            nbr_ps_inc ++;
+        }
+    }
+    for (auto& pt : space.Neighbor(oldsumopoint))
+    {
+        if (space.EmptyPos(pt))
+        {
+            nbr_ps_inc --;
+        }
+    }
+    
+    for (auto& pt : space.Neighbor(newsumopoint))
+    {
+        if (space.EmptyPos(pt))
+        {
+            nbr_ps_inc ++;
+        }
+    }
+
+
+    
+    if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc, nbr_ps_inc))
+    {
+        space.SafeRemove(oldsimpoint);
+        space.SafeRemove(oldsumopoint);
+        space.SafeCreate(newsimpoint, 1);
+        space.SafeCreate(newsumopoint, -1);
+        
+        move.UpdatePolymer(poly, simpointid, newsimpoint);
+        move.UpdatePolymer(space.Sumos[sumoid], sumopointid, newsumopoint);
+        
+        move.UpdateReverseCheckingSpace(oldsimpoint, newsimpoint, poly);
+        move.UpdateReverseCheckingSpace(oldsumopoint, newsumopoint, space.Sumos[sumoid]);
+        
+        space.CreateBond(newsimpoint, newsumopoint);
+        succ += 1;
+        
+        return make_tuple(true, nbr_bond_inc);
+    }
+    else
+        return make_tuple(false, nbr_bond_inc);
+
+    
+    
 }
 
 
