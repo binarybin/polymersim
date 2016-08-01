@@ -113,10 +113,6 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
         {
             nbr_ps_inc --;
         }
-        else
-        {
-            nbr_ps_inc ++;
-        }
     }
     
     for (auto& pt : space.Neighbor(newpoint))
@@ -124,10 +120,6 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
         if (space.EmptyPos(pt))
         {
             nbr_ps_inc ++;
-        }
-        else
-        {
-            nbr_ps_inc --;
         }
     }
     
@@ -181,10 +173,6 @@ tuple<bool, int> Move<S, P, M>::ExecCoMove(int simid)
         {
             nbr_ps_inc --;
         }
-        else
-        {
-            nbr_ps_inc ++;
-        }
     }
     
     for (auto& pt : space.Neighbor(newsimpoint))
@@ -193,20 +181,12 @@ tuple<bool, int> Move<S, P, M>::ExecCoMove(int simid)
         {
             nbr_ps_inc ++;
         }
-        else
-        {
-            nbr_ps_inc --;
-        }
     }
     for (auto& pt : space.Neighbor(oldsumopoint))
     {
         if (space.EmptyPos(pt))
         {
             nbr_ps_inc --;
-        }
-        else
-        {
-            nbr_ps_inc ++;
         }
     }
     
@@ -215,10 +195,6 @@ tuple<bool, int> Move<S, P, M>::ExecCoMove(int simid)
         if (space.EmptyPos(pt))
         {
             nbr_ps_inc ++;
-        }
-        else
-        {
-            nbr_ps_inc --;
         }
     }
 
