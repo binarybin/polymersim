@@ -20,7 +20,7 @@ int main(int argc, const char * argv[])
     size_t lx = stoi(argv[5]);
     size_t ly = stoi(argv[6]);
     
-    size_t nbr_run = stoi(argv[7]);
+    size_t nbr_run = std::stol(argv[7]);
     
     string signature = argv[8];
     
