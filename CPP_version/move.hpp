@@ -76,6 +76,86 @@ public:
         return possible_moves[id];
     }
     
+    int ComputePSIncSameLayer(P oldpoint, P newpoint)
+    {
+        int nbr_ps_inc = 0;
+        for (auto& pt : space.Neighbor(oldpoint))
+        {
+            if (space.EmptyPos(pt))
+            {
+                nbr_ps_inc --;
+            }
+        }
+        
+        for (auto& pt : space.Neighbor(newpoint))
+        {
+            if (space.EmptyPos(pt) || (pt.x == oldpoint.x && pt.y == oldpoint.y)) // Don't need to check that point is not created since it is the neighbor of newpoint
+            {
+                nbr_ps_inc ++;
+            }
+        }
+        return nbr_ps_inc;
+    }
+    
+    int ComputePSIncCrossLayer(P oldpoint, P newpoint)
+    {
+        int nbr_ps_inc = 0;
+        for (auto& pt : space.Neighbor(space.BondNeighbor(oldpoint)[0]))
+        {
+            if (space.EmptyPos(pt))
+            {
+                nbr_ps_inc --;
+            }
+        }
+        
+        for (auto& pt : space.Neighbor(space.BondNeighbor(newpoint)[0]))
+        {
+            if (space.EmptyPos(pt))// Don't need to check anything as that point is neither created nor removed
+            {
+                nbr_ps_inc ++;
+            }
+        }
+        return nbr_ps_inc;
+    }
+    
+    int ComputePSIncCrossLayer_Co(P oldSimPoint, P newSimPoint, P oldSumoPoint, P newSumoPoint)
+    {
+        int nbr_ps_inc = 0;
+        for (auto& pt : space.Neighbor(space.BondNeighbor(oldSimPoint)[0]))
+        {
+            if (space.EmptyPos(pt))
+            {
+                nbr_ps_inc --;
+            }
+        }
+        
+        for (auto& pt : space.Neighbor(space.BondNeighbor(newSimPoint)[0]))
+        {
+            if ((space.EmptyPos(pt) && !(pt.x == newSumoPoint.x && pt.y == newSumoPoint.y)) || (pt.x == oldSumoPoint.x && pt.y == oldSumoPoint.y)) // Make sure that point is not created. It is OK if that point is removed
+            {
+                nbr_ps_inc ++;
+            }
+        }
+        
+        for (auto& pt : space.Neighbor(space.BondNeighbor(oldSumoPoint)[0]))
+        {
+            if (space.EmptyPos(pt))
+            {
+                nbr_ps_inc --;
+            }
+        }
+        
+        for (auto& pt : space.Neighbor(space.BondNeighbor(newSumoPoint)[0]))
+        {
+            if ((space.EmptyPos(pt) && !(pt.x == newSimPoint.x && pt.y == newSimPoint.y)) || (pt.x == oldSimPoint.x && pt.y == oldSimPoint.y)) // Make sure that point is not created. It is OK if that point is removed
+            {
+                nbr_ps_inc ++;
+            }
+        }
+        return nbr_ps_inc;
+    }
+
+    
     double Weight(int nbr_bond_inc, int nbr_ps_inc) {return exp(nbr_bond_inc * beta - nbr_ps_inc * gamma);}
    
 };
@@ -106,22 +186,7 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
     
     if (!bond_choice.empty()) nbr_bond_inc ++;
     
-    int nbr_ps_inc = 0;
-    for (auto& pt : space.Neighbor(oldpoint))
-    {
-        if (space.EmptyPos(pt))
-        {
-            nbr_ps_inc --;
-        }
-    }
-    
-    for (auto& pt : space.Neighbor(newpoint))
-    {
-        if (space.EmptyPos(pt))
-        {
-            nbr_ps_inc ++;
-        }
-    }
+    int nbr_ps_inc = ComputePSIncSameLayer(oldpoint, newpoint) + ComputePSIncCrossLayer(oldpoint, newpoint);
     
     if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc, nbr_ps_inc))
     {
@@ -160,44 +225,14 @@ tuple<bool, int> Move<S, P, M>::ExecCoMove(int simid)
     
     P oldsimpoint = poly.locs[simpointid];
     P oldsumopoint = oldsimpoint.OtherLayer();
-    
     int nbr_bond_inc = 0;
     
     if(!space.InABond(oldsimpoint))
         nbr_bond_inc ++;
     
-    int nbr_ps_inc = 0;
-    for (auto& pt : space.Neighbor(oldsimpoint))
-    {
-        if (space.EmptyPos(pt))
-        {
-            nbr_ps_inc --;
-        }
-    }
+    int nbr_ps_inc = ComputePSIncSameLayer(oldsimpoint, newsimpoint) + ComputePSIncSameLayer(oldsumopoint, newsumopoint);
     
-    for (auto& pt : space.Neighbor(newsimpoint))
-    {
-        if (space.EmptyPos(pt))
-        {
-            nbr_ps_inc ++;
-        }
-    }
-    for (auto& pt : space.Neighbor(oldsumopoint))
-    {
-        if (space.EmptyPos(pt))
-        {
-            nbr_ps_inc --;
-        }
-    }
-    
-    for (auto& pt : space.Neighbor(newsumopoint))
-    {
-        if (space.EmptyPos(pt))
-        {
-            nbr_ps_inc ++;
-        }
-    }
-
+    nbr_ps_inc += ComputePSIncCrossLayer_Co(oldsimpoint, newsimpoint, oldsumopoint, newsumopoint);
 
     
     if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc, nbr_ps_inc))
@@ -220,8 +255,6 @@ tuple<bool, int> Move<S, P, M>::ExecCoMove(int simid)
     }
     else
         return make_tuple(false, nbr_bond_inc);
-
-    
     
 }
 
