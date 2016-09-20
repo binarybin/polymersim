@@ -111,6 +111,9 @@ public:
     }
 };
 
+
+// TODO: modify this
+/*
 template <class S, class P, class M>
 tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P> newpoints)
 {
@@ -186,6 +189,40 @@ tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P
                     result_pos.push_back(pt_epyc_rubi.first);
         }
     }
+    
+    for (auto id : result_pos)
+    {
+        assert(!space.Phosphorylated(poly.locs[id]));
+    }
+    
+    new_nbr_bond = (int)(result_pos.size());
+    return std::make_tuple(new_nbr_bond - old_nbr_bond, result_pos);
+}
+*/
+// The version that does not impose the non-two-end-interacting rule
+template <class S, class P, class M>
+tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P> newpoints)
+{
+    int old_nbr_bond = 0, new_nbr_bond = 0;
+    for (auto oldpoint : poly.locs)
+    {
+        if (space.InABond(oldpoint))
+        {
+            old_nbr_bond ++;
+        }
+    }
+    vector<int> result_pos;
+    for (int i = 0; i < space.LSim; i++)
+        if (!space.Phosphorylated(poly.locs[i]))
+        {
+            P bpoint = space.BondNeighbor(newpoints[i])[0];
+            int rubiscoid = space.GetRspacePoint(bpoint)[0];
+            if (rubiscoid != NOBOND)
+                if (!space.Phosphorylated(bpoint))
+                {
+                    result_pos.push_back(i);
+                }
+        }
     
     for (auto id : result_pos)
     {

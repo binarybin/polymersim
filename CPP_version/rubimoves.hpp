@@ -174,6 +174,10 @@ tuple<bool, int> RubiMove<S, P, M>::ExecMove(int polyid, char polytyp)
         return make_tuple(false, nbr_bond_inc);
 }
 
+
+// TODO: modify this
+
+/*
 template <class S, class P, class M>
 tuple<int, vector<int>> RubiMove<S,P,M>::ComputeBondInc(Polymer<P> poly, vector<P> newpoints)
 {
@@ -251,7 +255,36 @@ tuple<int, vector<int>> RubiMove<S,P,M>::ComputeBondInc(Polymer<P> poly, vector<
     new_nbr_bond = result_pos.size();
     return std::make_tuple(new_nbr_bond - old_nbr_bond, result_pos);
 }
-
+*/
+// The version that does not impose the non-two-end-interacting rule
+template <class S, class P, class M>
+tuple<int, vector<int>> RubiMove<S,P,M>::ComputeBondInc(Polymer<P> poly, vector<P> newpoints)
+{
+    int old_nbr_bond = 0, new_nbr_bond = 0;
+    for (auto oldpoint : poly.locs)
+    {
+        if (space.InABond(oldpoint))
+        {
+            old_nbr_bond ++;
+        }
+    }
+    
+    vector<int> result_pos;
+    
+    for (int i = 0; i < space.LSumo; i++)
+    {
+        P bpoint = space.BondNeighbor(newpoints[i])[0];
+        int epycid = space.GetRspacePoint(bpoint)[0];
+        if (epycid != NOBOND )
+            if (!space.Phosphorylated(bpoint))
+            {
+                result_pos.push_back(i);
+            }
+    }
+    
+    new_nbr_bond = result_pos.size();
+    return std::make_tuple(new_nbr_bond - old_nbr_bond, result_pos);
+}
 
 template <class S, class P, class M>
 int RubiMove<S,P,M>::ComputePSIncCrossLayer(Polymer<P> poly, vector<P> newpoints, int polyid)
