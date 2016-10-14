@@ -63,6 +63,7 @@ public:
         ResumeReverse();
         cout<<"Finished resuming"<<endl;
     }
+    
     void ResumeBasicInfo(vector<vector<string>>& spaceanal, vector<vector<string>>& polyanal);
     void ResumeSpace(vector<vector<string>>& spaceanal, vector<vector<string>>& polyanal);
     void ResumePolymer(vector<vector<string>>& spaceanal, vector<vector<string>>& polyanal);

@@ -60,8 +60,8 @@ int main(int argc, const char * argv[])
     
     vector<tuple<int, double, double, int, int>> tasklist = GetTaskList(argv[7]);
     string signature = argv[8];
-    
-    SimAnnealing<Space2D2L, Pos2d2l> process(nsim, nsumo, lsim, lsumo, lx, ly, signature, tasklist);
+    string initfile = argv[9];
+    SimAnnealing<Space2D2L, Pos2d2l> process(nsim, nsumo, lsim, lsumo, lx, ly, signature, tasklist, initfile);
     
     process.Run();
     return 0;

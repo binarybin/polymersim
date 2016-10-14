@@ -25,10 +25,11 @@ class SimAnnealing
     App<S, P> app;
     string signature;
     string raw_filename;
+    string initfile;
     vector<tuple<int, double, double, int, int>> tasklist;
     vector<char> move_list;
 public:
-    SimAnnealing(int nsim, int nsumo, int lsim, int lsumo, size_t lx, size_t ly, string run_signature, vector<tuple<int, double, double, int, int>> thetasklist) : app(nsim, nsumo, lsim, lsumo, lx, ly), signature(run_signature), tasklist(thetasklist), move_list({'s', 'e', 'c', 't', 'r', 'T', 'R', 'X', 'Y'})
+    SimAnnealing(int nsim, int nsumo, int lsim, int lsumo, size_t lx, size_t ly, string run_signature, vector<tuple<int, double, double, int, int>> thetasklist, string initfile) : app(nsim, nsumo, lsim, lsumo, lx, ly), signature(run_signature), tasklist(thetasklist), move_list({'s', 'e', 'c', 't', 'r', 'T', 'R', 'X', 'Y'}), initfile(initfile)
     {
         raw_filename = "PolymerSim_";
         raw_filename += string("SimAnneal_");
@@ -44,7 +45,17 @@ public:
     
     void Run()
     {
-        app.Initialize();
+        if (initfile.empty())
+        {
+            app.Initialize();
+        }
+        else
+        {
+            ifstream fin(initfile);
+            app.Resume(fin);
+            fin.close();
+        }
+        
         ofstream r_out(raw_filename + "_running.txt");
         r_out<<"beta\t"<<"gamma\t";
         for (auto move : move_list) r_out<<move<<"_succ\t";
@@ -79,12 +90,12 @@ public:
             {
                 for (auto move : move_list) app.Proceed(move);
                 
-                if (i % (runs/10000) == 0)
-                {
-                    r_out<<beta<<"\t"<<gamma<<"\t";
-                    for (auto move : move_list) r_out<<app.ResetMoveSucc(move)<<"\t";
-                    r_out<<app.GetEnergy()<<endl;
-                }
+//                if (i % (runs/10000+1) == 0)
+//                {
+//                    r_out<<beta<<"\t"<<gamma<<"\t";
+//                    for (auto move : move_list) r_out<<app.ResetMoveSucc(move)<<"\t";
+//                    r_out<<app.GetEnergy()<<endl;
+//                }
             }
             string filename = string(raw_filename) + string("_status_step_") + to_string(idx) + string("_beta_") + to_string(beta) + string("_gamma_") + to_string(gamma) + string(".txt");
             ofstream out(filename);

@@ -336,37 +336,7 @@ public:
         {
             return the_result;
         }
-/*
-#ifndef NDEBUG
-        cout<<"Trying rotational blob move"<<endl;
-        auto newspace = space.space;
-        for (auto rubiid : rubis)
-        {
-            for (auto pt : space.Sumos[rubiid].locs)
-            {
-                newspace[1][pt.x][pt.y] = -3;
-            }
-        }
-        for (auto epycid : epycs)
-        {
-            for (auto pt : space.Sims[epycid].locs)
-            {
-                newspace[0][pt.x][pt.y] = 3;
-            }
-        }
-        cout<<"Two dimensional double layer space"<<endl;
-        cout<<"Site occupation configuration: "<<endl;
-        for (int i = 0; i < space.Lx; i++)
-        {
-            for (int j = 0; j < space.Ly; j++)
-            {
-                cout<<newspace[0][i][j]<<","<<newspace[1][i][j]<<'\t';
-            }
-            cout<<endl;
-        }
-        cout<<"END"<<endl;
-#endif
- */
+
         // Now we just push them into the GetPossibleMultipleMoves function
         // to get rotations around different points
         for (auto rubiid : rubis)
@@ -375,37 +345,6 @@ public:
             auto moves_one_point = GetPossibleMultipleMoves(rubis, epycs, refpt);
             the_result.insert( the_result.end(), moves_one_point.begin(), moves_one_point.end() );
         }
-/*
-#ifndef NDEBUG
-        for (auto result : the_result)
-        {
-            cout<<"We've got a move!"<<endl;
-            for (int i = 0; i < result.rubiscoIDs.size(); i++)
-            {
-                auto newpoints = result.rubiscoNewPoints[i];
-                auto id = result.rubiscoIDs[i];
-                cout<<"New Rubisco "<<id<<"\t"<<endl;
-                for (auto pt : newpoints)
-                {
-                    cout<<pt.x<<" "<<pt.y<<"\t";
-                }
-                cout<<endl;
-            }
-            for (int i = 0; i < result.epycIDs.size(); i++)
-            {
-                auto newpoints = result.epycNewPoints[i];
-                auto id = result.epycIDs[i];
-                cout<<"New EPYC "<<id<<"\t"<<endl;
-                for (auto pt : newpoints)
-                {
-                    cout<<pt.x<<" "<<pt.y<<"\t";
-                }
-                cout<<endl;
-            }
-            cout<<endl;
-        }
-#endif
- */
         return the_result;
     }
     
