@@ -10,9 +10,9 @@
 #include "simanneal.hpp"
 using std::stoi;
 
-vector<tuple<int, double, double, int, int>> GetTaskList(std::string filename)
+vector<tuple<int, double, double, int, int, int>> GetTaskList(std::string filename)
 {
-    vector<tuple<int, double, double, int, int>> result;
+    vector<tuple<int, double, double, int, int, int>> result;
     
     ifstream in(filename);
     if(in.fail())
@@ -36,9 +36,10 @@ vector<tuple<int, double, double, int, int>> GetTaskList(std::string filename)
         int idx = stoi(tokens[0]);
         double beta = stof(tokens[1]);
         double gamma = stof(tokens[2]);
-        int runs = stoi(tokens[3]);
-        int phos = stoi(tokens[4]);
-        result.push_back(make_tuple(idx, beta, gamma, runs, phos));
+        int runsim = stoi(tokens[3]);
+        int runsumo = stoi(tokens[4]);
+        int phos = stoi(tokens[5]);
+        result.push_back(make_tuple(idx, beta, gamma, runsim, runsumo, phos));
     }
 
     in.close();
@@ -58,9 +59,10 @@ int main(int argc, const char * argv[])
     size_t lx = stoi(argv[5]);
     size_t ly = stoi(argv[6]);
     
-    vector<tuple<int, double, double, int, int>> tasklist = GetTaskList(argv[7]);
+    vector<tuple<int, double, double, int, int, int>> tasklist = GetTaskList(argv[7]);
     string signature = argv[8];
     string initfile = argv[9];
+    cout<<"done"<<endl;
     SimAnnealing<Space2D2L, Pos2d2l> process(nsim, nsumo, lsim, lsumo, lx, ly, signature, tasklist, initfile);
     
     process.Run();
