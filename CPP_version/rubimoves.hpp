@@ -175,9 +175,9 @@ tuple<bool, int> RubiMove<S, P, M>::ExecMove(int polyid, char polytyp)
 }
 
 
-// TODO: modify this
+// The code with no-two-halves rule
 
-/*
+
 template <class S, class P, class M>
 tuple<int, vector<int>> RubiMove<S,P,M>::ComputeBondInc(Polymer<P> poly, vector<P> newpoints)
 {
@@ -255,8 +255,9 @@ tuple<int, vector<int>> RubiMove<S,P,M>::ComputeBondInc(Polymer<P> poly, vector<
     new_nbr_bond = result_pos.size();
     return std::make_tuple(new_nbr_bond - old_nbr_bond, result_pos);
 }
-*/
+
 // The version that does not impose the non-two-end-interacting rule
+/*
 template <class S, class P, class M>
 tuple<int, vector<int>> RubiMove<S,P,M>::ComputeBondInc(Polymer<P> poly, vector<P> newpoints)
 {
@@ -285,6 +286,7 @@ tuple<int, vector<int>> RubiMove<S,P,M>::ComputeBondInc(Polymer<P> poly, vector<
     new_nbr_bond = result_pos.size();
     return std::make_tuple(new_nbr_bond - old_nbr_bond, result_pos);
 }
+*/
 
 template <class S, class P, class M>
 int RubiMove<S,P,M>::ComputePSIncCrossLayer(Polymer<P> poly, vector<P> newpoints, int polyid)

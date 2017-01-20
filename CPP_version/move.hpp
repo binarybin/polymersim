@@ -112,8 +112,8 @@ public:
 };
 
 
-// TODO: modify this
-/*
+// The version with the no-two-halves rule
+
 template <class S, class P, class M>
 tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P> newpoints)
 {
@@ -198,8 +198,9 @@ tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P
     new_nbr_bond = (int)(result_pos.size());
     return std::make_tuple(new_nbr_bond - old_nbr_bond, result_pos);
 }
-*/
+
 // The version that does not impose the non-two-end-interacting rule
+/*
 template <class S, class P, class M>
 tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P> newpoints)
 {
@@ -232,7 +233,7 @@ tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P
     new_nbr_bond = (int)(result_pos.size());
     return std::make_tuple(new_nbr_bond - old_nbr_bond, result_pos);
 }
-
+*/
 
 template <class S, class P, class M>
 tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
