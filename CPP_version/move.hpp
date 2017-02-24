@@ -112,7 +112,7 @@ public:
 };
 
 
-// The version with the no-two-halves rule
+#ifdef NO_TWO_END
 
 template <class S, class P, class M>
 tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P> newpoints)
@@ -127,7 +127,7 @@ tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P
     }
     
     std::map<int, vector<pair<int, int>>> epyc_rubisco; //map from rubisco_id to (point_in_epic, point_in_rubisco)
-    for (int i = 0; i < space.LSim; i++)
+    for (int i = 0; i < poly.locs.size(); i++)
         if (!space.Phosphorylated(poly.locs[i]))
         {
             P bpoint = space.BondNeighbor(newpoints[i])[0];
@@ -198,9 +198,10 @@ tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P
     new_nbr_bond = (int)(result_pos.size());
     return std::make_tuple(new_nbr_bond - old_nbr_bond, result_pos);
 }
+#else
 
 // The version that does not impose the non-two-end-interacting rule
-/*
+
 template <class S, class P, class M>
 tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P> newpoints)
 {
@@ -213,7 +214,7 @@ tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P
         }
     }
     vector<int> result_pos;
-    for (int i = 0; i < space.LSim; i++)
+    for (int i = 0; i < poly.locs.size(); i++)
         if (!space.Phosphorylated(poly.locs[i]))
         {
             P bpoint = space.BondNeighbor(newpoints[i])[0];
@@ -233,7 +234,7 @@ tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P
     new_nbr_bond = (int)(result_pos.size());
     return std::make_tuple(new_nbr_bond - old_nbr_bond, result_pos);
 }
-*/
+#endif
 
 template <class S, class P, class M>
 tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)

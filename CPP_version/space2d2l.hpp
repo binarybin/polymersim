@@ -38,7 +38,8 @@ class Space2D2L
 {
 public:
     const static string name;
-    int NSim, LSim, NSumo, LSumo;
+    int NSim1, LSim1, NSim2, LSim2, NSumo, LSumo;
+    int NSim, LSim; // NSim=NSim1+NSim2, LSim=max(LSim1, LSim2)
     size_t Lx, Ly;
     int SimId, SumoId;
     vector<Polymer<Pos2d2l>> Sims;
@@ -46,9 +47,9 @@ public:
     vector<vector<vector<int>>> space; //location is specified as space[layer][x][y]
     vector<vector<vector<vector<int>>>> rspace; // rspace[layer][x][y](polymerid, pos_on_poly)
     
-    Space2D2L(int nsim, int nsumo, int lsim, int lsumo, size_t lx, size_t ly) :
-    NSim(nsim), NSumo(nsumo), LSim(lsim), LSumo(lsumo), Lx(lx), Ly(ly),
-    SimId(0), SumoId(0),
+    Space2D2L(int nsim1, int nsim2, int nsumo, int lsim1, int lsim2, int lsumo, size_t lx, size_t ly) :
+    NSim1(nsim1), NSim2(nsim2), NSumo(nsumo), LSim1(lsim1), LSim2(lsim2), LSumo(lsumo), Lx(lx), Ly(ly),
+    SimId(0), SumoId(0), NSim(nsim1+nsim2), LSim(max(lsim1, lsim2)),
     space(2, vector<vector<int>>(lx, vector<int>(ly))),
     rspace(2, vector<vector<vector<int>>>(lx, vector<vector<int>>(ly, vector<int>(2, NOBOND))))
     {}

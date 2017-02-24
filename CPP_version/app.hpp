@@ -49,8 +49,8 @@ class App
     int original_nbr_bond;
 public:
     S test_tube;
-    App(int nsim, int nsumo, int lsim, int lsumo, size_t lx, size_t ly):
-        test_tube(nsim, nsumo, lsim, lsumo, lx, ly),
+    App(int nsim1, int nsim2, int nsumo, int lsim1, int lsim2, int lsumo, size_t lx, size_t ly):
+        test_tube(nsim1, nsim2, nsumo, lsim1, lsim2, lsumo, lx, ly),
         sm(test_tube), cm(test_tube), em(test_tube),
         tm(test_tube), rm(test_tube), Tm(test_tube), Rm(test_tube),
         Xm(test_tube), Ym(test_tube),

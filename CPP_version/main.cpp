@@ -52,18 +52,19 @@ int main(int argc, const char * argv[])
     cout<<"Polymer Simulation Started!"<<endl;
     
     cout<<"argc: "<<argc<<endl;
-    int nsim = stoi(argv[1]);
-    int nsumo = stoi(argv[2]);
-    int lsim = stoi(argv[3]);
-    int lsumo = stoi(argv[4]);
-    size_t lx = stoi(argv[5]);
-    size_t ly = stoi(argv[6]);
+    int nsim1 = stoi(argv[1]);
+    int nsim2 = stoi(argv[2]);
+    int nsumo = stoi(argv[3]);
+    int lsim1 = stoi(argv[4]);
+    int lsim2 = stoi(argv[5]);
+    int lsumo = stoi(argv[6]);
+    size_t lx = stoi(argv[7]);
+    size_t ly = stoi(argv[8]);
     
-    vector<tuple<int, double, double, int, int, int>> tasklist = GetTaskList(argv[7]);
-    string signature = argv[8];
-    string initfile = argv[9];
-    cout<<"done"<<endl;
-    SimAnnealing<Space2D2L, Pos2d2l> process(nsim, nsumo, lsim, lsumo, lx, ly, signature, tasklist, initfile);
+    vector<tuple<int, double, double, int, int, int>> tasklist = GetTaskList(argv[9]);
+    string signature = argv[10];
+    string initfile = argv[11];
+    SimAnnealing<Space2D2L, Pos2d2l> process(nsim1, nsim2, nsumo, lsim1, lsim2, lsumo, lx, ly, signature, tasklist, initfile);
     
     process.Run();
     return 0;

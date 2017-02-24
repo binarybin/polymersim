@@ -88,10 +88,23 @@ void Space2D2L::DiluteInit(char direction)
     if (direction == 'h')
     {
         int dl = (int)Lx/NSim;
-        for (int x = 0; x < NSim; x++)
+        
+        for (int x = 0; x < NSim1; x++)
         {
-            vector<Pos2d2l> locs(LSim);
-            for (int l = 0; l < LSim; l++)
+            vector<Pos2d2l> locs(LSim1);
+            for (int l = 0; l < LSim1; l++)
+            {
+                locs[l].siml = true;
+                locs[l].x = x * dl;
+                locs[l].y = l;
+            }
+            this->Place('i', x, locs);
+        }
+        
+        for (int x = NSim1; x < NSim1+NSim2; x++)
+        {
+            vector<Pos2d2l> locs(LSim2);
+            for (int l = 0; l < LSim2; l++)
             {
                 locs[l].siml = true;
                 locs[l].x = x * dl;
@@ -125,10 +138,11 @@ void Space2D2L::DiluteInit(char direction)
     else if (direction == 'v')
     {
         int dl = (int)Ly/NSim;
-        for (int y = 0; y < NSim; y++)
+        
+        for (int y = 0; y < NSim1; y++)
         {
-            vector<Pos2d2l> locs(LSim);
-            for (int l = 0; l < LSim; l++)
+            vector<Pos2d2l> locs(LSim1);
+            for (int l = 0; l < LSim1; l++)
             {
                 locs[l].siml = true;
                 locs[l].x = l;
@@ -136,6 +150,19 @@ void Space2D2L::DiluteInit(char direction)
             }
             this->Place('i', y, locs);
         }
+        
+        for (int y = NSim1; y < NSim1+NSim2; y++)
+        {
+            vector<Pos2d2l> locs(LSim2);
+            for (int l = 0; l < LSim2; l++)
+            {
+                locs[l].siml = true;
+                locs[l].x = l;
+                locs[l].y = y*dl;
+            }
+            this->Place('i', y, locs);
+        }
+        
         
         dl = (int)Ly/NSumo;
         
@@ -190,6 +217,12 @@ void Space2D2L::DenseInit(int rows, char typ)
             {
                 if (count >= N)
                     break;
+                
+                if (count < NSim1)
+                    Length = LSim1;
+                else
+                    Length = LSim2;
+                
                 int y = yidx*dy;
                 
                 cout<<"Initializing "<< "SIM "<<count<<" row "<<x<<" column "<<y<<endl;
@@ -201,7 +234,6 @@ void Space2D2L::DenseInit(int rows, char typ)
                     locs[l].x = x;
                     locs[l].y = y+l;
                 }
-                
                 Place(typ, count, locs);
                 count += 1;
             }

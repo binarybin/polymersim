@@ -29,16 +29,21 @@ class SimAnnealing
     vector<tuple<int, double, double, int, int, int>> tasklist;
     vector<char> move_list;
 public:
-    SimAnnealing(int nsim, int nsumo, int lsim, int lsumo, size_t lx, size_t ly, string run_signature, vector<tuple<int, double, double, int, int, int>> thetasklist, string initfile) : app(nsim, nsumo, lsim, lsumo, lx, ly), signature(run_signature), tasklist(thetasklist), move_list({'s', 'e', 'c', 't', 'r', 'T', 'R', 'X', 'Y'}), initfile(initfile)
+    SimAnnealing(int nsim1, int nsim2, int nsumo, int lsim1, int lsim2, int lsumo, size_t lx, size_t ly, string run_signature, vector<tuple<int, double, double, int, int, int>> thetasklist, string initfile) : app(nsim1, nsim2, nsumo, lsim1, lsim2, lsumo, lx, ly), signature(run_signature), tasklist(thetasklist), move_list({'s', 'e', 'c', 't', 'r', 'T', 'R', 'X', 'Y'}), initfile(initfile)
     {
         raw_filename = "PolymerSim_";
+#ifdef NO_TWO_END
+        raw_filename += string("NoTwo_");
+#endif
         raw_filename += string("SimAnneal_");
         raw_filename += S::name + string("_");
         raw_filename += signature;
-        raw_filename += string("_nsim") + to_string(nsim);
-        raw_filename += string("_nsumo") + to_string(nsumo);
-        raw_filename += string("_lsim") + to_string(lsim);
-        raw_filename += string("_lsumo") + to_string(lsumo);
+        raw_filename += string("_nsim1_") + to_string(nsim1);
+        raw_filename += string("_nsim2_") + to_string(nsim2);
+        raw_filename += string("_nsumo_") + to_string(nsumo);
+        raw_filename += string("_lsim1_") + to_string(lsim1);
+        raw_filename += string("_lsim2_") + to_string(lsim2);
+        raw_filename += string("_lsumo_") + to_string(lsumo);
         raw_filename += string("_lx") + to_string(lx);
         raw_filename += string("_ly") + to_string(ly);
     }
@@ -76,7 +81,7 @@ public:
             {
                 app.DephosphorylateAllEpyc();
             }
-            else if(phos == 5) // a code for changing the epyc length from 5 to 4
+            else if(phos == 5) // a code for reducing a phos number of epyc length by 1
             {
                 app.ReduceEpycLength();
             }
