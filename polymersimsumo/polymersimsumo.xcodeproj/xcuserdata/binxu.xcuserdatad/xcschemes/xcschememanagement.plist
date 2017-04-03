@@ -4,7 +4,7 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
-		<key>FloryHuggins.xcscheme</key>
+		<key>polymersimsumo.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>0</integer>
@@ -12,7 +12,7 @@
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
-		<key>FE02083B1C40420E00C6544C</key>
+		<key>FE78F8E71E8D924000E9BDA4</key>
 		<dict>
 			<key>primary</key>
 			<true/>
