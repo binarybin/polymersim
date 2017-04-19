@@ -14,6 +14,8 @@
 #include <ctime>
 #include "app.hpp"
 
+typedef tuple<int, double, double, double, int, int, int> task_t;
+
 using std::ofstream;
 using std::ifstream;
 using std::string;
@@ -26,10 +28,10 @@ class SimAnnealing
     string signature;
     string raw_filename;
     string initfile;
-    vector<tuple<int, double, double, int, int, int>> tasklist;
+    vector<task_t> tasklist;
     vector<char> move_list;
 public:
-    SimAnnealing(int nsim1, int nsim2, int nsumo, int lsim1, int lsim2, int lsumo, size_t lx, size_t ly, string run_signature, vector<tuple<int, double, double, int, int, int>> thetasklist, string initfile) : app(nsim1, nsim2, nsumo, lsim1, lsim2, lsumo, lx, ly), signature(run_signature), tasklist(thetasklist), move_list({'s', 'e', 'c', 't', 'r', 'T', 'R', 'X', 'Y'}), initfile(initfile)
+    SimAnnealing(int nsim1, int nsim2, int nsumo, int lsim1, int lsim2, int lsumo, size_t lx, size_t ly, string run_signature, vector<tuple<int, double, double, double, int, int, int>> thetasklist, string initfile) : app(nsim1, nsim2, nsumo, lsim1, lsim2, lsumo, lx, ly), signature(run_signature), tasklist(thetasklist), move_list({'s', 'e', 'c', 't', 'r', 'T', 'R', 'X', 'Y'}), initfile(initfile)
     {
         raw_filename = "PolymerSim_";
 #ifdef NO_TWO_END
@@ -69,10 +71,11 @@ public:
         {
             int idx = std::get<0>(task);
             double beta = std::get<1>(task);
-            double gamma = std::get<2>(task);
-            int runsim = std::get<3>(task);
-            int runsumo = std::get<4>(task);
-            int phos = std::get<5>(task);
+            double gamma_intra = std::get<2>(task);
+            double gamma_inter = std::get<3>(task);
+            int runsim = std::get<4>(task);
+            int runsumo = std::get<5>(task);
+            int phos = std::get<6>(task);
             if (phos == 1)
             {
                 app.PhosphorylateOneSiteEpyc();
@@ -86,9 +89,10 @@ public:
                 app.ReduceEpycLength();
             }
             app.SetBeta(beta);
-            app.SetGamma(gamma);
+            app.SetGammaIntra(gamma_intra);
+            app.SetGammaInter(gamma_inter);
             
-            cout<<"Running task #"<<idx<<" with beta = "<<beta<<" and gamma = "<<gamma<<", "<<runsim<<" sim runs "<<runsumo<<" sumo runs"<<endl;
+            cout<<"Running task #"<<idx<<" with beta = "<<beta<<" and gamma_intra = "<<gamma_intra<< " and gamma_inter = "<<gamma_inter<<", "<<runsim<<" sim runs "<<runsumo<<" sumo runs"<<endl;
             
             // reset the success statistics
             for (auto move : move_list) app.ResetMoveSucc(move);
@@ -109,7 +113,7 @@ public:
                     for (auto move : {'t', 'r'}) app.Proceed(move);
             }
             
-            string filename = string(raw_filename) + string("_status_step_") + to_string(idx) + string("_beta_") + to_string(beta) + string("_gamma_") + to_string(gamma) + string(".txt");
+            string filename = string(raw_filename) + string("_status_step_") + to_string(idx) + string("_beta_") + to_string(beta) + string("_gammaintra_") + to_string(gamma_intra) + string("_gammainter_") + to_string(gamma_inter) + string(".txt");
             ofstream out(filename);
             app.Dump(out);
             out.close();

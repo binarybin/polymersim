@@ -36,7 +36,8 @@ private:
     S& space;
     M move;
     double beta;
-    double gamma;
+    double gammaintra;
+    double gammainter;
     
     int succ;
     
@@ -45,13 +46,14 @@ private:
     
 public:
     int bond_change;
-    RubiMove(S &thespace): move(thespace), space(thespace), beta(0), gamma(0), bond_change(0), succ(0), gen(rd()){}
+    RubiMove(S &thespace): move(thespace), space(thespace), beta(0), gammaintra(0), gammainter(0), bond_change(0), succ(0), gen(rd()){}
     
     void ClearSucc(){succ=0;}
     int GetSucc(){return succ;}
     
     void SetBeta(double setbeta)  {beta = setbeta;}
-    void SetGamma(double setgamma) {gamma = setgamma;}
+    void SetGammaIntra(double setgamma) {gammaintra = setgamma;}
+    void SetGammaInter(double setgamma) {gammainter = setgamma;}
     
     tuple<bool, int> ExecMove(int polyid, char polytyp);
     vector<P> ChooseMove(vector<vector<P>> possible_moves)
@@ -70,7 +72,10 @@ public:
         return possible_moves[id];
     }
     
-    double Weight(int nbr_bond_inc, int nbr_ps_inc) {return exp(nbr_bond_inc * beta - nbr_ps_inc * gamma);}
+    double Weight(int nbr_bond_inc, int nbr_ps_inc_intra, int nbr_ps_inc_inter)
+    {
+        return exp(nbr_bond_inc * beta - nbr_ps_inc_intra * gammaintra - nbr_ps_inc_inter * gammainter);
+    }
     
     void UpdateReverseCheckingSpace(vector<P>& oldpoints, vector<P> newpoints)
     {
@@ -131,9 +136,10 @@ tuple<bool, int> RubiMove<S, P, M>::ExecMove(int polyid, char polytyp)
     int nbr_bond_inc = 0; vector<int> bond_id_list;
     tie(nbr_bond_inc, bond_id_list) = ComputeBondInc(poly, newpoints);
     
-    int nbr_ps_inc = ComputePSIncCrossLayer(poly, newpoints, polyid) + ComputePSIncSameLayer(poly, newpoints, polyid);
+    int nbr_ps_inc_intra = ComputePSIncSameLayer(poly, newpoints, polyid);
+    int nbr_ps_inc_inter = ComputePSIncCrossLayer(poly, newpoints, polyid);
     
-    if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc, nbr_ps_inc))
+    if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc, nbr_ps_inc_intra, nbr_ps_inc_inter))
     {
         // NOTE: for this part, a better way is to dephosphorylate all of them, finish the move, and phosphorylate them. So sitevalues will still be +/- 1
         vector<int> sitevalues;
@@ -375,10 +381,9 @@ bool RubiMove<S, P, M>::ExecDragMove(int polyid, bool blob)
 #ifndef NDEBUG
     PrintSpace(cout, space);
 #endif
-    int nbr_ps_inc = nbr_ps_inc_pair.first + nbr_ps_inc_pair.second;
     
     
-    if (generate_canonical<double, 10>(gen) < Weight(0, nbr_ps_inc))
+    if (generate_canonical<double, 10>(gen) < Weight(0, nbr_ps_inc_pair.first, nbr_ps_inc_pair.second))
     {
         UpdateRealSpaceDrag(the_move);
         UpdateRSpaceDrag(the_move);

@@ -33,7 +33,8 @@ private:
     S& space;
     M move;
     double beta;
-    double gamma;
+    double gammaintra;
+    double gammainter;
     
     int succ;
     
@@ -42,14 +43,15 @@ private:
     
 public:
     int bond_change;
-    Move(S &thespace): move(thespace), space(thespace), beta(0), gamma(0), bond_change(0), succ(0), gen(rd()){}
+    Move(S &thespace): move(thespace), space(thespace), beta(0), gammaintra(0), gammainter(0), bond_change(0), succ(0), gen(rd()){}
     
     void ClearSucc(){succ=0;}
     int GetSucc(){return succ;}
     
     tuple<bool, int> ExecMove(int polyid, char polytyp);
     void SetBeta(double setbeta)  {beta = setbeta;}
-    void SetGamma(double setgamma) {gamma = setgamma;}
+    void SetGammaIntra(double setgamma) {gammaintra = setgamma;}
+    void SetGammaInter(double setgamma) {gammainter = setgamma;}
     
     P ChooseBond(vector<P> bond_choice)
     {
@@ -67,7 +69,10 @@ public:
         return possible_moves[id];
     }
     
-    double Weight(int nbr_bond_inc, int nbr_ps_inc) {return exp(nbr_bond_inc * beta - nbr_ps_inc * gamma);}
+    double Weight(int nbr_bond_inc, int nbr_ps_inc_intra, int nbr_ps_inc_inter)
+    {
+        return exp(nbr_bond_inc * beta - nbr_ps_inc_intra * gammaintra - nbr_ps_inc_inter * gammainter);
+    }
     tuple<int, vector<int>> ComputeBondInc(Polymer<P>& poly, vector<P> newpoints);
     int ComputePSIncCrossLayer(P oldpoint, P newpoint, int polyid)
     {
@@ -259,9 +264,10 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
     tie(nbr_bond_inc, bond_id_list) = ComputeBondInc(poly, temp_new_polymer.locs);
     
     
-    int nbr_ps_inc = ComputePSIncSameLayer(oldpoint, newpoint, polyid) + ComputePSIncCrossLayer(oldpoint, newpoint, polyid);
+    int nbr_ps_inc_intra = ComputePSIncSameLayer(oldpoint, newpoint, polyid);
+    int nbr_ps_inc_inter = ComputePSIncCrossLayer(oldpoint, newpoint, polyid);
     
-    if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc, nbr_ps_inc))
+    if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc, nbr_ps_inc_intra, nbr_ps_inc_inter))
     {
         int sitevalue = space.GetSpacePoint(oldpoint);
         sitevalue = sitevalue/abs(sitevalue);

@@ -66,7 +66,12 @@ def get_polys(lines):
             raise Exception("Something wrong with the type")
     return sims, sumos
 
-
+def drawphos(axs, pt):
+    lw = 10
+    cl = 'k'
+    y, x= pt
+    axs.vlines(x, y-0.2, y+0.2, linewidth=lw, color = cl)
+    axs.hlines(y, x-0.2, x+0.2, linewidth=lw, color = cl)
 
 def drawline(axs, pt1, pt2):
     lw = 3
@@ -149,12 +154,18 @@ def plotsumo(axs, sumos):
     for pts in sumos:
         drawframe(axs, pts)
 
-def make_plot(sumolayer, sims, sumos, prop):
+def plotphos(axs, phoslist):
+    for pt in phoslist:
+        drawphos(axs, pt)
+
+def make_plot(simlayer, sumolayer, sims, sumos, prop):
     fig, axs = plt.subplots(1,1,figsize=(10,10))
-    axs.imshow(sumolayer, clim=(-2, 2), interpolation='none')
+    axs.imshow(sumolayer, clim=(-3, 3), interpolation='none')
     fig.canvas.draw()
     plotsumo(axs, sumos)
     plotsim(axs, sims)
+    phoslist=[(i,j) for i in range(len(simlayer)) for j in range(len(simlayer[0])) if simlayer[i,j]== 3]
+    plotphos(axs, phoslist)
     title(prop)
 #    fig.show()
     savefig(prop + ".png")
@@ -162,7 +173,7 @@ def make_plot(sumolayer, sims, sumos, prop):
 def analyze(lines, prop):
     simlayer, sumolayer = get_layers(lines)
     sims, sumos = get_polys(lines)
-    make_plot(sumolayer, sims, sumos, prop)
+    make_plot(simlayer, sumolayer, sims, sumos, prop)
 
     
     
@@ -174,16 +185,19 @@ def analyze(lines, prop):
 fff = open("filelist.txt", 'r')
 for filename in fff.readlines():
     try: 
-        f = open("dragres/"+filename[:-1], 'r')
+        f = open(filename[:-1], 'r')
         lines = f.readlines()
         propraw = filename
-        nepyc = propraw.split("nsim")[1].split('_')[0]
-        nrubi = propraw.split("nsumo")[1].split('_')[0]
-        lepyc = propraw.split("lsim")[1].split('_')[0]
-        lrubi = propraw.split("lsumo")[1].split('_')[0]
+        nepyc1 = propraw.split("_nsim1_")[1].split('_')[0]
+        nepyc2 = propraw.split("_nsim2_")[1].split('_')[0]
+        nrubi = propraw.split("_nsumo_")[1].split('_')[0]
+        lepyc1 = propraw.split("_lsim1_")[1].split('_')[0]
+        lepyc2 = propraw.split("_lsim2_")[1].split('_')[0]
+        lrubi = propraw.split("_lsumo_")[1].split('_')[0]
         beta = propraw.split("beta_")[1].split('_')[0]
         gamma = propraw.split("gamma_")[1].split(".txt")[0]
-        prop = "NEPYC_"+nepyc+"_NRUBI_"+nrubi+"_LEPYC_"+lepyc+"_LRUBY_"+lrubi+"_beta_"+beta+"_gamma_"+gamma
+        step = propraw.split("step_")[1].split("_")[0]
+        prop = "NEPYC1_"+nepyc1+"_NEPYC2_"+nepyc2+"_NRUBI_"+nrubi+"_LEPYC1_"+lepyc1+"_LEPYC2_"+lepyc2+"_LRUBY_"+lrubi+"_beta_"+beta+"_gamma_"+gamma+"_step_"+step
         analyze(lines, prop)
     except e:
         print filename+"failed"

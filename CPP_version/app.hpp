@@ -160,17 +160,30 @@ public:
         
     }
     
-    void SetGamma(double gamma)
+    void SetGammaIntra(double gammaintra)
     {
-        sm.SetGamma(gamma);
-        cm.SetGamma(gamma);
-        em.SetGamma(gamma);
-        tm.SetGamma(gamma);
-        rm.SetGamma(gamma);
-        Tm.SetGamma(gamma);
-        Rm.SetGamma(gamma);
-        Xm.SetGamma(gamma);
-        Ym.SetGamma(gamma);
+        sm.SetGammaIntra(gammaintra);
+        cm.SetGammaIntra(gammaintra);
+        em.SetGammaIntra(gammaintra);
+        tm.SetGammaIntra(gammaintra);
+        rm.SetGammaIntra(gammaintra);
+        Tm.SetGammaIntra(gammaintra);
+        Rm.SetGammaIntra(gammaintra);
+        Xm.SetGammaIntra(gammaintra);
+        Ym.SetGammaIntra(gammaintra);
+    }
+    
+    void SetGammaInter(double gammainter)
+    {
+        sm.SetGammaInter(gammainter);
+        cm.SetGammaInter(gammainter);
+        em.SetGammaInter(gammainter);
+        tm.SetGammaInter(gammainter);
+        rm.SetGammaInter(gammainter);
+        Tm.SetGammaInter(gammainter);
+        Rm.SetGammaInter(gammainter);
+        Xm.SetGammaInter(gammainter);
+        Ym.SetGammaInter(gammainter);
     }
     
     void Dump(std::ostream &out)
