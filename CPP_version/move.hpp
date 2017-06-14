@@ -187,8 +187,8 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
     if (!bond_choice.empty()) nbr_bond_inc ++;
     
     int nbr_ps_inc = ComputePSIncSameLayer(oldpoint, newpoint) + ComputePSIncCrossLayer(oldpoint, newpoint);
-    
-    if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc, nbr_ps_inc))
+  //  double dE = DeltaE(nbr_bond_inc, nbr_ps_inc, nbr_over_inc);
+    if (generate_canonical<double, 10>(gen) < Weight(nbr_bond_inc, nbr_ps_inc)) // exp(dE)
     {
         assert(!space.EmptyPos(oldpoint));
         space.SafeRemove(oldpoint);
@@ -204,10 +204,10 @@ tuple<bool, int> Move<S, P, M>::ExecMove(int polyid, char polytyp)
         succ += 1;
         bond_change += nbr_bond_inc;
         
-        return make_tuple(true, nbr_bond_inc);
+        return make_tuple(true, nbr_bond_inc); // (true, dE)
     }
     else
-        return make_tuple(false, nbr_bond_inc);
+        return make_tuple(false, nbr_bond_inc); // (false, dE)
 }
 
 template <class S, class P, class M>
