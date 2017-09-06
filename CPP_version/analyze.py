@@ -195,7 +195,7 @@ for filename in fff.readlines():
         lepyc2 = propraw.split("_lsim2_")[1].split('_')[0]
         lrubi = propraw.split("_lsumo_")[1].split('_')[0]
         beta = propraw.split("beta_")[1].split('_')[0]
-        gamma = propraw.split("gamma_")[1].split(".txt")[0]
+        gamma = propraw.split("gammaintra_")[1].split(".txt")[0]
         step = propraw.split("step_")[1].split("_")[0]
         prop = "NEPYC1_"+nepyc1+"_NEPYC2_"+nepyc2+"_NRUBI_"+nrubi+"_LEPYC1_"+lepyc1+"_LEPYC2_"+lepyc2+"_LRUBY_"+lrubi+"_beta_"+beta+"_gamma_"+gamma+"_step_"+step
         analyze(lines, prop)

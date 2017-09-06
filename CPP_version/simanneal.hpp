@@ -31,10 +31,12 @@ class SimAnnealing
     vector<task_t> tasklist;
     vector<char> move_list;
 public:
-    SimAnnealing(int nsim1, int nsim2, int nsumo, int lsim1, int lsim2, int lsumo, size_t lx, size_t ly, string run_signature, vector<tuple<int, double, double, double, int, int, int>> thetasklist, string initfile) : app(nsim1, nsim2, nsumo, lsim1, lsim2, lsumo, lx, ly), signature(run_signature), tasklist(thetasklist), move_list({'s', 'e', 'c', 't', 'r', 'T', 'R', 'X', 'Y'}), initfile(initfile)
+    SimAnnealing(int nsim1, int nsim2, int nsumo, int lsim1, int lsim2, int lsumo, size_t lx, size_t ly, string run_signature, vector<tuple<int, double, double, double, int, int, int>> thetasklist, string initfile) : app(nsim1, nsim2, nsumo, lsim1, lsim2, lsumo, lx, ly), signature(run_signature), tasklist(thetasklist), move_list({'s', 'e', 'c', 'f', 't', 'r', 'T', 'R', 'X', 'Y'}), initfile(initfile)
     {
         raw_filename = "PolymerSim_";
-#ifdef NO_TWO_END
+#ifdef MIDLINE
+        raw_filename += string("midline_");
+#elif NO_TWO_END
         raw_filename += string("NoTwo_");
 #endif
         raw_filename += string("SimAnneal_");
@@ -102,7 +104,7 @@ public:
                     for (auto move : move_list) app.Proceed(move);
 
                 for (int i = 1; i <= runsim - runsumo; i++)
-                    for (auto move : {'s', 'e', 'c'}) app.Proceed(move);
+                    for (auto move : {'s', 'e', 'c', 'f'}) app.Proceed(move);
             }
             else
             {
