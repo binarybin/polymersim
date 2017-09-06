@@ -117,7 +117,7 @@ public:
 };
 
 
-#ifdef NO_TWO_END
+#ifdef MIDLINE
 
 template <class S, class P, class M>
 tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P> newpoints)
@@ -160,37 +160,39 @@ tuple<int, vector<int>> Move<S, P, M>::ComputeBondInc(Polymer<P>& poly, vector<P
     for (auto epyc_link : intersect)
         // each epyc_link is a pair with an epyc_id and a vector of rubisco points connected to it
     {
-        int nbr_first_half = 0;
-        int nbr_second_half = 0;
         
+        int nbr_left = 0;
+        int nbr_right = 0;
+        int nbr_bot = 0;
         for (auto pt_epyc_rubi : epyc_link.second)
         {
-            if (pt_epyc_rubi.second >= 0 && pt_epyc_rubi.second < 4) nbr_first_half ++;
-            else if (pt_epyc_rubi.second < 8 && pt_epyc_rubi.second >=4) nbr_second_half ++;
+            if (pt_epyc_rubi.second == 0) nbr_left ++;
+            else if (pt_epyc_rubi.second == 3) nbr_left ++;
+            else if (pt_epyc_rubi.second == 1 || pt_epyc_rubi.second == 2 ) nbr_bot ++;
             else
                 throw(std::invalid_argument("ComputeBondInc"));
         }
         
         
-        if (nbr_first_half == nbr_second_half) // The equal case, randomly decide which half to pick
+        
+        if (nbr_left == nbr_right) // The equal case, randomly decide which half to pick
         {
             if (rand()%2 == 0)
-                nbr_first_half ++;
+                nbr_left ++;
             else
-                nbr_second_half ++;
+                nbr_right ++;
         }
         
-        
-        if (nbr_first_half > nbr_second_half)
+        if (nbr_left > nbr_right)
         {
             for (auto pt_epyc_rubi : epyc_link.second)
-                if (pt_epyc_rubi.second >= 0 && pt_epyc_rubi.second < 4)
+                if (pt_epyc_rubi.second == 0 || pt_epyc_rubi.second == 1 || pt_epyc_rubi.second == 2 )
                     result_pos.push_back(pt_epyc_rubi.first);
         }
         else
         {
             for (auto pt_epyc_rubi : epyc_link.second)
-                if (pt_epyc_rubi.second < 8 && pt_epyc_rubi.second >= 4)
+                if (pt_epyc_rubi.second == 3 || pt_epyc_rubi.second == 1 || pt_epyc_rubi.second == 2 )
                     result_pos.push_back(pt_epyc_rubi.first);
         }
     }

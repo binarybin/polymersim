@@ -128,10 +128,6 @@ void Space2D2L::DiluteInit(char direction)
             locs[1].x += 1;
             locs[2].x += 1, locs[2].y += 1;
             locs[3].y += 1;
-            locs[4].y += 2;
-            locs[5].x += 1, locs[5].y += 2;
-            locs[6].x += 1, locs[6].y += 3;
-            locs[7].y += 3;
             this->Place('u', x, locs);
         }
     }
@@ -178,11 +174,6 @@ void Space2D2L::DiluteInit(char direction)
             locs[1].y += 1;
             locs[2].y += 1, locs[2].x += 1;
             locs[3].x += 1;
-            locs[4].x += 2;
-            locs[5].y += 1, locs[5].x += 2;
-            locs[6].y += 1, locs[6].x += 3;
-            locs[7].x += 3;
-            
             this->Place('u', y, locs);
         }
     }
@@ -278,11 +269,6 @@ void Space2D2L::DenseInit(int rows, char typ)
                 locs[1].x += 1;
                 locs[2].x += 1, locs[2].y += 1;
                 locs[3].y += 1;
-                locs[4].y += 2;
-                locs[5].x += 1, locs[5].y += 2;
-                locs[6].x += 1, locs[6].y += 3;
-                locs[7].y += 3;
-                
                 Place(typ, count, locs);
                 count += 1;
             }

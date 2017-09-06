@@ -20,6 +20,7 @@
 #include "space2d2l.hpp"
 #include "translationmove.hpp"
 #include "rotationmove.hpp"
+#include "spinmove.hpp"
 
 using std::invalid_argument;
 using std::tuple;
@@ -180,8 +181,8 @@ tuple<bool, int> RubiMove<S, P, M>::ExecMove(int polyid, char polytyp)
         return make_tuple(false, nbr_bond_inc);
 }
 
-#ifdef NO_TWO_END
-// The code with no-two-halves rule
+#ifdef MIDLINE
+// The code with MIDLINE rule
 template <class S, class P, class M>
 tuple<int, vector<int>> RubiMove<S,P,M>::ComputeBondInc(Polymer<P> poly, vector<P> newpoints)
 {
@@ -221,38 +222,38 @@ tuple<int, vector<int>> RubiMove<S,P,M>::ComputeBondInc(Polymer<P> poly, vector<
     for (auto epyc_link : intersect)
         // each epyc_link is a pair with an epyc_id and a vector of rubisco points connected to it
     {
-        int nbr_first_half = 0;
-        int nbr_second_half = 0;
         
-        for (auto pointid : epyc_link.second)
+        int nbr_left = 0;
+        int nbr_right = 0;
+        int nbr_bot = 0;
+        for (auto pt_epyc_rubi : epyc_link.second)
         {
-            if (pointid >= 0 && pointid < 4) nbr_first_half ++;
-            else if (pointid < 8 && pointid >=4) nbr_second_half ++;
+            if (pt_epyc_rubi == 0) nbr_left ++;
+            else if (pt_epyc_rubi == 3) nbr_left ++;
+            else if (pt_epyc_rubi == 1 || pt_epyc_rubi == 2 ) nbr_bot ++;
             else
                 throw(std::invalid_argument("ComputeBondInc"));
         }
         
-        
-        if (nbr_first_half == nbr_second_half) // The equal case, randomly decide which half to pick
+        if (nbr_left == nbr_right) // The equal case, randomly decide which half to pick
         {
             if (rand()%2 == 0)
-                nbr_first_half ++;
+                nbr_left ++;
             else
-                nbr_second_half ++;
+                nbr_right ++;
         }
         
-        
-        if (nbr_first_half > nbr_second_half)
+        if (nbr_left > nbr_right)
         {
-            for (auto pointid : epyc_link.second)
-                if (pointid >= 0 && pointid < 4)
-                    result_pos.push_back(pointid);
+            for (auto pt_epyc_rubi : epyc_link.second)
+                if (pt_epyc_rubi == 0 || pt_epyc_rubi == 1 || pt_epyc_rubi == 2 )
+                    result_pos.push_back(pt_epyc_rubi);
         }
         else
         {
-            for (auto pointid : epyc_link.second)
-                if (pointid < 8 && pointid >= 4)
-                    result_pos.push_back(pointid);
+            for (auto pt_epyc_rubi : epyc_link.second)
+                if (pt_epyc_rubi == 3 || pt_epyc_rubi == 1 || pt_epyc_rubi == 2 )
+                    result_pos.push_back(pt_epyc_rubi);
         }
     }
     

@@ -31,7 +31,7 @@ class SimAnnealing
     vector<task_t> tasklist;
     vector<char> move_list;
 public:
-    SimAnnealing(int nsim1, int nsim2, int nsumo, int lsim1, int lsim2, int lsumo, size_t lx, size_t ly, string run_signature, vector<tuple<int, double, double, double, int, int, int>> thetasklist, string initfile) : app(nsim1, nsim2, nsumo, lsim1, lsim2, lsumo, lx, ly), signature(run_signature), tasklist(thetasklist), move_list({'s', 'e', 'c', 't', 'r', 'T', 'R', 'X', 'Y'}), initfile(initfile)
+    SimAnnealing(int nsim1, int nsim2, int nsumo, int lsim1, int lsim2, int lsumo, size_t lx, size_t ly, string run_signature, vector<tuple<int, double, double, double, int, int, int>> thetasklist, string initfile) : app(nsim1, nsim2, nsumo, lsim1, lsim2, lsumo, lx, ly), signature(run_signature), tasklist(thetasklist), move_list({'s', 'e', 'c', 't', 'r', 'S', 'T', 'R', 'X', 'Y'}), initfile(initfile)
     {
         raw_filename = "PolymerSim_";
 #ifdef NO_TWO_END
@@ -110,7 +110,7 @@ public:
                     for (auto move : move_list) app.Proceed(move);
 
                 for (int i = 1; i <= runsumo - runsim; i++)
-                    for (auto move : {'t', 'r'}) app.Proceed(move);
+                    for (auto move : {'t', 'r', 'S'}) app.Proceed(move);
             }
             
             string filename = string(raw_filename) + string("_status_step_") + to_string(idx) + string("_beta_") + to_string(beta) + string("_gammaintra_") + to_string(gamma_intra) + string("_gammainter_") + to_string(gamma_inter) + string(".txt");

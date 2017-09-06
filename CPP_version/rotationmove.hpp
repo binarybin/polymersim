@@ -34,15 +34,15 @@ public:
     P GetRefPoint(int rubiscoid)
     {
         auto locs = space.Sumos[rubiscoid].locs;
-        int max_x = locs[2].x, max_y = locs[2].y;
-        for (int i = 3; i <= 5; i++)
+        int max_x = locs[0].x, max_y = locs[0].y;
+        for (int i = 0; i <= 3; i++)
         {
             if (locs[i].x == (max_x + 1) % space.Lx)
                 max_x = locs[i].x;
             if (locs[i].y == (max_y + 1) % space.Ly)
                 max_y = locs[i].y;
         }
-        for (int i = 2; i <= 5; i++)
+        for (int i = 0; i <= 3; i++)
         {
             if (locs[i].x == max_x && locs[i].y == max_y)
             {

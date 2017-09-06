@@ -40,6 +40,7 @@ class App
     Move<S, P, EndMove<S, P>> em;
     RubiMove<S, P, TranslationMove<S, P>> tm;
     RubiMove<S, P, RotationMove<S, P>> rm;
+    RubiMove<S, P, SpinMove<S, P>> spm;
     RubiMove<S, P, TranslationMove<S, P>> Tm;
     RubiMove<S, P, RotationMove<S, P>> Rm;
     RubiMove<S, P, TranslationMove<S, P>> Xm;
@@ -52,7 +53,8 @@ public:
     App(int nsim1, int nsim2, int nsumo, int lsim1, int lsim2, int lsumo, size_t lx, size_t ly):
         test_tube(nsim1, nsim2, nsumo, lsim1, lsim2, lsumo, lx, ly),
         sm(test_tube), cm(test_tube), em(test_tube),
-        tm(test_tube), rm(test_tube), Tm(test_tube), Rm(test_tube),
+        tm(test_tube), rm(test_tube), spm(test_tube),
+        Tm(test_tube), Rm(test_tube),
         Xm(test_tube), Ym(test_tube),
         gen(rd()), original_nbr_bond(0) {}
     
@@ -116,6 +118,11 @@ public:
                 rm.ClearSucc();
                 break;
             
+            case 'S':
+                returnvalue = spm.GetSucc();
+                spm.ClearSucc();
+                break;
+
             case 'T':
                 returnvalue = Tm.GetSucc();
                 Tm.ClearSucc();
@@ -153,6 +160,7 @@ public:
         em.SetBeta(beta);
         tm.SetBeta(beta);
         rm.SetBeta(beta);
+        spm.SetBeta(beta);
         Tm.SetBeta(beta);
         Rm.SetBeta(beta);
         Xm.SetBeta(beta);
@@ -167,6 +175,7 @@ public:
         em.SetGammaIntra(gammaintra);
         tm.SetGammaIntra(gammaintra);
         rm.SetGammaIntra(gammaintra);
+        spm.SetGammaIntra(gammaintra);
         Tm.SetGammaIntra(gammaintra);
         Rm.SetGammaIntra(gammaintra);
         Xm.SetGammaIntra(gammaintra);
@@ -180,6 +189,7 @@ public:
         em.SetGammaInter(gammainter);
         tm.SetGammaInter(gammainter);
         rm.SetGammaInter(gammainter);
+        spm.SetGammaInter(gammainter);
         Tm.SetGammaInter(gammainter);
         Rm.SetGammaInter(gammainter);
         Xm.SetGammaInter(gammainter);
@@ -402,6 +412,10 @@ void App<S,P>::Proceed(char typ)
             
         case 'r':
             rm.ExecMove(id_r, 'u');
+            break;
+            
+        case 'S':
+            spm.ExecMove(id_r, 'u');
             break;
             
         case 'T':
