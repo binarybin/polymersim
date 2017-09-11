@@ -186,78 +186,58 @@ tuple<bool, int> RubiMove<S, P, M>::ExecMove(int polyid, char polytyp)
 template <class S, class P, class M>
 tuple<int, vector<int>> RubiMove<S,P,M>::ComputeBondInc(Polymer<P> poly, vector<P> newpoints)
 {
-    int old_nbr_bond = 0, new_nbr_bond = 0;
+    int old_nbr_bond = 0;
     for (auto oldpoint : poly.locs)
     {
         if (space.InABond(oldpoint))
-        {
             old_nbr_bond ++;
-        }
     }
     
-    std::map<int, vector<int>> rubisco_epyc; //map from epyc_id to point_in_rubisco
-    for (int i = 0; i < space.LSumo; i++)
+    vector<pair<int, int>> epyc_info; // [(epycid, pt_in_epyc), ...]
+    vector<bool> bondable;
+    for (int i = 0; i < poly.locs.size(); i++)
     {
         P bpoint = space.BondNeighbor(newpoints[i])[0];
         int epycid = space.GetRspacePoint(bpoint)[0];
-        if (epycid != NOBOND )
-            if (!space.Phosphorylated(bpoint))
-            {
-                rubisco_epyc[epycid].push_back(i);
-            }
+        int epycpos = space.GetRspacePoint(bpoint)[1];
+
+        epyc_info.push_back(std::make_pair(epycid, epycpos));
+        if (epycid != NOBOND)
+            bondable.push_back(true);
+        else
+            bondable.push_back(false);
+    }
+
+    if ( (epyc_info[0].first == epyc_info[1].first) && abs(epyc_info[0].second - epyc_info[1].second) == 1)
+    {
+        if (rand()%2 == 0)
+            bondable[0] = false;
+        else
+            bondable[1] = false;
+    }
+    
+    if ( (epyc_info[2].first == epyc_info[3].first) && abs(epyc_info[2].second - epyc_info[3].second) == 1)
+    {
+        if (rand()%2 == 0)
+            bondable[2] = false;
+        else
+            bondable[3] = false;
+    }
+    
+    if ( (epyc_info[4].first == epyc_info[5].first) && abs(epyc_info[4].second - epyc_info[5].second) == 1)
+    {
+        if (rand()%2 == 0)
+            bondable[4] = false;
+        else
+            bondable[5] = false;
     }
     
     vector<int> result_pos;
+    for (int i = 0; i < poly.locs.size(); i++)
+        if (bondable[i])
+            result_pos.push_back(i);
     
-    vector<pair<int, vector<int>>> intersect;
-    
-    for(auto epyc_link : rubisco_epyc)
-    {
-        if (epyc_link.second.size() > 1)
-            intersect.push_back(epyc_link);
-        else
-            result_pos.push_back(epyc_link.second[0]);
-    }
-    
-    for (auto epyc_link : intersect)
-        // each epyc_link is a pair with an epyc_id and a vector of rubisco points connected to it
-    {
-
-        int nbr_left = 0;
-        int nbr_right = 0;
-        int nbr_bot = 0;
-        for (auto pt_epyc_rubi : epyc_link.second)
-        {
-            if (pt_epyc_rubi == 0 || pt_epyc_rubi == 3 || pt_epyc_rubi == 4) nbr_left ++;
-            else if (pt_epyc_rubi == 1 || pt_epyc_rubi == 2 || pt_epyc_rubi == 5) nbr_left ++;
-            else if (pt_epyc_rubi == 6 || pt_epyc_rubi == 7 ) nbr_bot ++;
-            else
-                throw(std::invalid_argument("ComputeBondInc"));
-        }
-        
-        if (nbr_left == nbr_right) // The equal case, randomly decide which half to pick
-        {
-            if (rand()%2 == 0)
-                nbr_right ++;
-            else
-                nbr_left ++;
-        }
-        
-        if (nbr_left > nbr_right)
-        {
-            for (auto pt_epyc_rubi : epyc_link.second)
-                if (pt_epyc_rubi == 0 || pt_epyc_rubi == 3 || pt_epyc_rubi == 4 || pt_epyc_rubi== 6 || pt_epyc_rubi == 7 )
-                    result_pos.push_back(pt_epyc_rubi);
-        }
-        else
-        {
-            for (auto pt_epyc_rubi : epyc_link.second)
-                if (pt_epyc_rubi == 1 || pt_epyc_rubi == 2 || pt_epyc_rubi == 5 || pt_epyc_rubi == 6 || pt_epyc_rubi == 7 )
-                    result_pos.push_back(pt_epyc_rubi);
-        }
-    }
-    
-    new_nbr_bond = result_pos.size();
+    int new_nbr_bond = (int)result_pos.size();
     return std::make_tuple(new_nbr_bond - old_nbr_bond, result_pos);
 }
 
