@@ -135,6 +135,26 @@ public:
         if (TouchedOtherPolymers(rubiscoIDs, epycIDs))
             return possible_moves;
         
+#ifdef TWO_DIRECTIONS
+        vector<int> rubi_dir;
+        int dir;
+        for (int rubiid : rubiscoIDs)
+            rubi_dir.push_back(get_rubisco_direction(rubiid));
+        if (rubi_dir.size() == 0)
+            return possible_moves;
+        else
+        {
+            dir = rubi_dir[0];
+            for (int rubid : rubi_dir)
+                if (rubid != dir)
+                    return possible_moves;
+        }
+        vector<int> move_dir(1,dir);
+#else
+        vector<int> move_dir = {1,2,3};
+#endif
+        
+        
         vector<vector<int>> rubiscoInBondIDs;
         for (int rubiscoID : rubiscoIDs)
         {
@@ -147,8 +167,7 @@ public:
             rubiscoInBondIDs.push_back(rubisco_sites_in_a_bond);
         }
         
-        
-        for (int i = 1; i <= 3; i++)
+        for (int i : move_dir)
         {
             DragMoveInfo<P> the_move;
             the_move.rubiscoIDs = rubiscoIDs;
@@ -348,6 +367,16 @@ public:
         return the_result;
     }
     
+    int get_rubisco_direction(int polyid) // assumed that all rubiscos are upward or pointing to the right, ATTENTION: to be modified if rubiscos can point to other directions
+    {
+        if (space.Sumos[polyid].locs[0].x == space.Sumos[polyid].locs[1].x)
+            return 3;
+        else if (space.Sumos[polyid].locs[0].y == space.Sumos[polyid].locs[1].y)
+            return 1;
+        else
+            throw std::invalid_argument("Get rubisco direction error");
+    }
+    
 };
 
 
@@ -358,7 +387,14 @@ vector<vector<Pos2d2l>> RotationMove<Space2D2L, Pos2d2l>::GetPossibleMoves(const
     
     auto refpoint = GetRefPoint(polyid);
     
-    for (int i = 1; i <= 3; i++)
+#ifdef TWO_DIRECTIONS
+    vector<int> move_dir;
+    move_dir.push_back(get_rubisco_direction(polyid));
+#else
+    vector<int> move_dir = {1,2,3};
+#endif
+    
+    for (int i : move_dir)
     {
         vector<Pos2d2l> new_points;
         for (int l=0; l<space.LSumo; l++)
