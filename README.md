@@ -1,4 +1,4 @@
-#System requirements:
+# System requirements:
 1.The program is run in macOS High Sierra and Catalina, with most recent 10.15.3 Beta version of macOS Catalina
 2.Check github repo. Each branch stands for:
 * master->polymer and polymer interaction
